@@ -1,0 +1,103 @@
+name: Git Workflow Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full Git history
+
+      - name: Check PR is from feature branch
+        run: |
+          echo "🔍 Checking PR branch name..."
+
+          branch_name="${{ github.head_ref }}"
+
+          if [[ ! "$branch_name" =~ ^feature/ ]]; then
+            echo "❌ PR must be from a feature/* branch"
+            echo "   Current branch: $branch_name"
+            echo ""
+            echo "💡 Hint: Create branch with:"
+            echo "   git checkout -b feature/refactor-to-modules"
+            exit 1
+          fi
+
+          echo "✅ PR is from feature branch: $branch_name"
+
+      - name: Check multiple commits (incremental refactoring)
+        run: |
+          echo "🔍 Checking commit history..."
+
+          # Count commits in this PR
+          commit_count=$(git rev-list --count HEAD ^origin/main)
+
+          echo "Found $commit_count commits in this PR"
+
+          if [ "$commit_count" -lt 3 ]; then
+            echo ""
+            echo "❌ Expected at least 3 commits (one per module extraction), found $commit_count"
+            echo ""
+            echo "💡 Hint: Make incremental commits as shown in Lecture 4:"
+            echo "   1. Extract geometry.py → commit"
+            echo "   2. Extract road.py → commit"
+            echo "   3. Extract visualization.py → commit"
+            echo "   4. Simplify main.py → commit"
+            echo ""
+            echo "   This shows your refactoring progression and makes code review easier!"
+            exit 1
+          fi
+
+          echo "✅ Found $commit_count commits (good incremental refactoring!)"
+
+      - name: Check commit messages quality
+        run: |
+          echo "🔍 Checking commit message quality..."
+
+          # Get all commit messages in this PR
+          git log --format=%s origin/main..HEAD > /tmp/commit_messages.txt
+
+          short_messages=0
+          line_num=0
+
+          while IFS= read -r msg; do
+            line_num=$((line_num + 1))
+
+            # Check message length (should be > 10 chars)
+            if [ ${#msg} -lt 10 ]; then
+              echo "❌ Commit $line_num has a too-short message: '$msg'"
+              short_messages=1
+            else
+              echo "✅ Commit $line_num: '$msg'"
+            fi
+          done < /tmp/commit_messages.txt
+
+          if [ $short_messages -eq 1 ]; then
+            echo ""
+            echo "💡 Hint: Write descriptive commit messages that explain WHAT and WHY:"
+            echo "   ✅ Good: 'Extract geometry functions to geometry.py'"
+            echo "   ❌ Bad: 'update' or 'fix'"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All commit messages are descriptive!"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Git Workflow Check Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "✅ PR is from feature branch"
+          echo "✅ Multiple incremental commits"
+          echo "✅ Descriptive commit messages"
+          echo ""
+          echo "Great Git workflow! 🚀"

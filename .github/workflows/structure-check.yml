@@ -1,0 +1,218 @@
+name: Refactoring Structure Check
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check-structure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          echo "🔍 Checking that all required module files exist..."
+
+          # Check each required file in src/road_profile_viewer/
+          files_missing=0
+
+          if [ ! -f src/road_profile_viewer/geometry.py ]; then
+            echo "❌ src/road_profile_viewer/geometry.py not found"
+            files_missing=1
+          else
+            echo "✅ src/road_profile_viewer/geometry.py exists"
+          fi
+
+          if [ ! -f src/road_profile_viewer/road.py ]; then
+            echo "❌ src/road_profile_viewer/road.py not found"
+            files_missing=1
+          else
+            echo "✅ src/road_profile_viewer/road.py exists"
+          fi
+
+          if [ ! -f src/road_profile_viewer/visualization.py ]; then
+            echo "❌ src/road_profile_viewer/visualization.py not found"
+            files_missing=1
+          else
+            echo "✅ src/road_profile_viewer/visualization.py exists"
+          fi
+
+          if [ ! -f src/road_profile_viewer/main.py ]; then
+            echo "❌ src/road_profile_viewer/main.py not found"
+            files_missing=1
+          else
+            echo "✅ src/road_profile_viewer/main.py exists"
+          fi
+
+          if [ $files_missing -eq 1 ]; then
+            echo ""
+            echo "💡 Hint: Create all module files in src/road_profile_viewer/ directory"
+            echo "   This is the proper Python package structure!"
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All required files exist!"
+
+      - name: Check geometry.py exports correct functions
+        run: |
+          echo "🔍 Checking geometry.py has required functions..."
+
+          errors=0
+
+          if ! grep -q "def calculate_ray_line" src/road_profile_viewer/geometry.py; then
+            echo "❌ calculate_ray_line() not found in geometry.py"
+            errors=1
+          else
+            echo "✅ calculate_ray_line() found"
+          fi
+
+          if ! grep -q "def find_intersection" src/road_profile_viewer/geometry.py; then
+            echo "❌ find_intersection() not found in geometry.py"
+            errors=1
+          else
+            echo "✅ find_intersection() found"
+          fi
+
+          if [ $errors -eq 1 ]; then
+            echo ""
+            echo "💡 Hint: Copy calculate_ray_line() and find_intersection() from src/road_profile_viewer/main.py"
+            exit 1
+          fi
+
+          echo "✅ geometry.py has correct functions!"
+
+      - name: Check road.py exports correct functions
+        run: |
+          echo "🔍 Checking road.py has required functions..."
+
+          if ! grep -q "def generate_road_profile" src/road_profile_viewer/road.py; then
+            echo "❌ generate_road_profile() not found in road.py"
+            echo ""
+            echo "💡 Hint: Copy generate_road_profile() from src/road_profile_viewer/main.py"
+            exit 1
+          fi
+
+          echo "✅ generate_road_profile() found"
+          echo "✅ road.py has correct functions!"
+
+      - name: Check visualization.py exports correct functions
+        run: |
+          echo "🔍 Checking visualization.py has required functions..."
+
+          if ! grep -q "def create_dash_app" src/road_profile_viewer/visualization.py; then
+            echo "❌ create_dash_app() not found in visualization.py"
+            echo ""
+            echo "💡 Hint: Copy create_dash_app() from src/road_profile_viewer/main.py"
+            exit 1
+          fi
+
+          echo "✅ create_dash_app() found"
+          echo "✅ visualization.py has correct functions!"
+
+      - name: Check main.py is simplified
+        run: |
+          echo "🔍 Checking main.py is simplified..."
+
+          lines=$(wc -l < src/road_profile_viewer/main.py)
+
+          if [ "$lines" -gt 30 ]; then
+            echo "❌ main.py has $lines lines (should be < 30)"
+            echo ""
+            echo "💡 Hint: main.py should be a NEW simplified file, not the original monolithic code"
+            echo "   It should only import from visualization and call create_dash_app()"
+            echo "   See Lecture 4, Section 6.4 for the example"
+            exit 1
+          fi
+
+          echo "✅ main.py is simplified ($lines lines)"
+
+      - name: Check proper imports in main.py
+        run: |
+          echo "🔍 Checking main.py imports from visualization..."
+
+          if ! grep -q "from \.visualization import\|from road_profile_viewer\.visualization import" src/road_profile_viewer/main.py; then
+            echo "❌ main.py doesn't import from visualization"
+            echo ""
+            echo "💡 Expected: from .visualization import create_dash_app"
+            echo "   or: from road_profile_viewer.visualization import create_dash_app"
+            exit 1
+          fi
+
+          echo "✅ main.py imports from visualization"
+
+      - name: Check proper imports in visualization.py
+        run: |
+          echo "🔍 Checking visualization.py imports from geometry and road..."
+
+          errors=0
+
+          if ! grep -q "from \.geometry import\|from road_profile_viewer\.geometry import" src/road_profile_viewer/visualization.py; then
+            echo "❌ visualization.py doesn't import from geometry"
+            errors=1
+          else
+            echo "✅ visualization.py imports from geometry"
+          fi
+
+          if ! grep -q "from \.road import\|from road_profile_viewer\.road import" src/road_profile_viewer/visualization.py; then
+            echo "❌ visualization.py doesn't import from road"
+            errors=1
+          else
+            echo "✅ visualization.py imports from road"
+          fi
+
+          if [ $errors -eq 1 ]; then
+            echo ""
+            echo "💡 Hint: visualization.py needs:"
+            echo "   from .geometry import calculate_ray_line, find_intersection"
+            echo "   from .road import generate_road_profile"
+            echo "   (Use relative imports within the package)"
+            exit 1
+          fi
+
+      - name: Check no circular dependencies
+        run: |
+          echo "🔍 Checking for circular dependencies..."
+
+          # geometry.py and road.py should NOT import from visualization or main
+          errors=0
+
+          if grep -q "from \.visualization import\|from road_profile_viewer\.visualization import\|from \.main import\|from road_profile_viewer\.main import" src/road_profile_viewer/geometry.py 2>/dev/null; then
+            echo "❌ Circular dependency detected: geometry.py imports from visualization or main"
+            errors=1
+          fi
+
+          if grep -q "from \.visualization import\|from road_profile_viewer\.visualization import\|from \.main import\|from road_profile_viewer\.main import" src/road_profile_viewer/road.py 2>/dev/null; then
+            echo "❌ Circular dependency detected: road.py imports from visualization or main"
+            errors=1
+          fi
+
+          if [ $errors -eq 1 ]; then
+            echo ""
+            echo "💡 Dependencies must flow ONE direction only:"
+            echo "   main → visualization → geometry, road"
+            echo "   Lower-level modules (geometry, road) should NOT import from higher-level (visualization, main)"
+            exit 1
+          fi
+
+          echo "✅ No circular dependencies detected!"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Structure Check Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "✅ All files exist in src/road_profile_viewer/"
+          echo "✅ Functions in correct modules"
+          echo "✅ main.py is simplified"
+          echo "✅ Imports are correct (relative imports)"
+          echo "✅ No circular dependencies"
+          echo ""
+          echo "Great job! Your refactoring structure is correct! 🚀"

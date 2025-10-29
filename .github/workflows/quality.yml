@@ -1,0 +1,54 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Ruff linter
+        run: |
+          uv run ruff check . || {
+            echo ""
+            echo "❌ Ruff linting failed"
+            echo "💡 Fix locally: uv run ruff check --fix ."
+            exit 1
+          }
+
+      - name: Check formatting
+        run: |
+          uv run ruff format --check . || {
+            echo ""
+            echo "❌ Code formatting check failed"
+            echo "💡 Fix locally: uv run ruff format ."
+            exit 1
+          }
+
+      - name: Run Pyright
+        run: |
+          uv run pyright || {
+            echo ""
+            echo "❌ Type checking failed"
+            echo "💡 Fix type errors and ensure all imports are correct"
+            exit 1
+          }

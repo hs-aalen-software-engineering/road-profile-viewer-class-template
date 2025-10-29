@@ -1,0 +1,68 @@
+name: Prevent Direct Push to Main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-direct-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if push came from PR merge
+        id: check-merge
+        run: |
+          echo "Checking if this push is from a PR merge..."
+
+          # Get the commit message
+          commit_msg=$(git log -1 --pretty=%B)
+
+          # Check if this is a merge commit from a PR
+          if [[ "$commit_msg" =~ ^Merge\ pull\ request ]] || git log -1 --merges | grep -q "Merge pull request"; then
+            echo "✅ This is a PR merge - allowed!"
+            echo "is_merge=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Direct push to main detected!"
+            echo "is_merge=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fail if direct push
+        if: steps.check-merge.outputs.is_merge != 'true'
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "❌ ASSIGNMENT REQUIREMENT VIOLATION"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "You pushed directly to the main branch!"
+          echo ""
+          echo "This assignment requires you to use the Pull Request workflow:"
+          echo ""
+          echo "📋 Required workflow:"
+          echo "   1. Create a feature branch: git checkout -b feature/refactor-to-modules"
+          echo "   2. Make your changes and commit incrementally"
+          echo "   3. Push your feature branch: git push origin feature/refactor-to-modules"
+          echo "   4. Create a Pull Request on GitHub"
+          echo "   5. Wait for automated checks to pass"
+          echo "   6. Get peer review approval"
+          echo "   7. Merge the PR (only then can you push to main)"
+          echo ""
+          echo "🔧 To fix this:"
+          echo "   1. Create a new feature branch from your current main"
+          echo "   2. Reset main to before your push (ask instructor for help)"
+          echo "   3. Push your feature branch and create a PR"
+          echo ""
+          echo "💡 This workflow teaches professional Git practices used in real companies!"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          exit 1
+
+      - name: Success message
+        if: steps.check-merge.outputs.is_merge == 'true'
+        run: |
+          echo "✅ PR was properly merged - workflow requirement satisfied!"

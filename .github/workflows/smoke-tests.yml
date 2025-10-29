@@ -1,0 +1,323 @@
+name: Smoke Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Initialize scoring
+        id: init
+        run: |
+          echo "" > /tmp/smoke_feedback.md
+          echo "## 🧪 Smoke Tests Results" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+
+      - name: Run smoke tests
+        id: tests
+        continue-on-error: true
+        run: |
+          echo "🧪 Running smoke tests..."
+
+          # Run pytest with verbose output
+          if uv run pytest tests/test_smoke.py -v --tb=short > /tmp/test_output.txt 2>&1; then
+            test_passed=true
+            echo "✅ All smoke tests passed!"
+            cat /tmp/test_output.txt
+          else
+            test_passed=false
+            echo "❌ Some smoke tests failed"
+            cat /tmp/test_output.txt
+          fi
+
+          # Parse test results
+          total_tests=$(grep -c "PASSED\|FAILED" /tmp/test_output.txt || echo "0")
+          passed_tests=$(grep -c "PASSED" /tmp/test_output.txt || echo "0")
+          failed_tests=$(grep -c "FAILED" /tmp/test_output.txt || echo "0")
+
+          score=0
+          max_score=10
+          feedback="### 🧪 Smoke Test Execution (0/$max_score points)\n\n"
+
+          if [ "$test_passed" = true ]; then
+            feedback+="✅ **All $passed_tests smoke tests passed!** (+10 points)\n\n"
+            score=10
+
+            feedback+="Tests passed:\n"
+            feedback+="\`\`\`\n"
+            grep "PASSED" /tmp/test_output.txt | sed 's/^/  /' >> /tmp/test_feedback.txt || true
+            feedback+="$(cat /tmp/test_feedback.txt || echo 'No test details available')\n"
+            feedback+="\`\`\`\n"
+          else
+            if [ "$passed_tests" -gt 0 ]; then
+              # Partial credit based on passed tests
+              score=$((passed_tests * 2))
+              if [ $score -gt $max_score ]; then
+                score=$max_score
+              fi
+              feedback+="⚠️ **$passed_tests out of $total_tests tests passed** (+$score points)\n\n"
+            else
+              feedback+="❌ **All tests failed** (0 points)\n\n"
+            fi
+
+            feedback+="**Failed tests:**\n"
+            feedback+="\`\`\`\n"
+            grep -A 5 "FAILED" /tmp/test_output.txt >> /tmp/test_feedback.txt || echo "No failure details available" >> /tmp/test_feedback.txt
+            feedback+="$(cat /tmp/test_feedback.txt)\n"
+            feedback+="\`\`\`\n\n"
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$test_passed" >> $GITHUB_OUTPUT
+          echo "passed_tests=$passed_tests" >> $GITHUB_OUTPUT
+          echo "total_tests=$total_tests" >> $GITHUB_OUTPUT
+
+          if [ "$test_passed" = false ]; then
+            echo "💡 **How to fix:** Run \`uv run pytest tests/test_smoke.py -v\` locally to see detailed error messages" >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+          fi
+
+      - name: Test breakdown
+        id: breakdown
+        if: always()
+        run: |
+          score=0
+          max_score=5
+          feedback="### 📋 Test Coverage Breakdown (0/$max_score points)\n\n"
+
+          passed_tests="${{ steps.tests.outputs.passed_tests }}"
+          total_tests="${{ steps.tests.outputs.total_tests }}"
+
+          # Expected tests
+          has_import_test=false
+          has_geometry_test=false
+          has_road_test=false
+          has_viz_test=false
+          has_main_test=false
+
+          # Check which tests passed
+          if grep -q "test_imports_work PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Import test passed (+1 point)\n"
+            score=$((score + 1))
+            has_import_test=true
+          else
+            feedback+="❌ Import test failed (0 points)\n"
+          fi
+
+          if grep -q "test_geometry_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Geometry module test passed (+1 point)\n"
+            score=$((score + 1))
+            has_geometry_test=true
+          else
+            feedback+="❌ Geometry module test failed (0 points)\n"
+          fi
+
+          if grep -q "test_road_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Road module test passed (+1 point)\n"
+            score=$((score + 1))
+            has_road_test=true
+          else
+            feedback+="❌ Road module test failed (0 points)\n"
+          fi
+
+          if grep -q "test_visualization_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Visualization module test passed (+1 point)\n"
+            score=$((score + 1))
+            has_viz_test=true
+          else
+            feedback+="❌ Visualization module test failed (0 points)\n"
+          fi
+
+          if grep -q "test_main_function_exists PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Main module test passed (+1 point)\n"
+            score=$((score + 1))
+            has_main_test=true
+          else
+            feedback+="❌ Main module test failed (0 points)\n"
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+      - name: Calculate final score
+        id: final
+        if: always()
+        run: |
+          # Sum up all scores
+          total_score=0
+          total_max=0
+
+          # Test execution
+          total_score=$((total_score + ${{ steps.tests.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.tests.outputs.max_score || 0 }}))
+
+          # Test breakdown
+          total_score=$((total_score + ${{ steps.breakdown.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.breakdown.outputs.max_score || 0 }}))
+
+          percentage=$((total_score * 100 / total_max))
+
+          echo "---" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+          echo "### 🎯 Final Score: $total_score / $total_max points ($percentage%)" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+
+          if [ $percentage -ge 90 ]; then
+            grade="A"
+            emoji="🌟"
+            comment="Excellent! All smoke tests pass!"
+          elif [ $percentage -ge 80 ]; then
+            grade="B"
+            emoji="👍"
+            comment="Good! Most tests are passing"
+          elif [ $percentage -ge 70 ]; then
+            grade="C"
+            emoji="👌"
+            comment="Acceptable, but some tests are failing"
+          elif [ $percentage -ge 60 ]; then
+            grade="D"
+            emoji="⚠️"
+            comment="Many tests are failing - needs work"
+          else
+            grade="F"
+            emoji="❌"
+            comment="Critical issues - most tests are failing"
+          fi
+
+          echo "**Grade: $grade** $emoji" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+          echo "*$comment*" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+
+          # Check if all tests passed
+          test_passed="${{ steps.tests.outputs.passed }}"
+
+          if [ "$test_passed" = "true" ]; then
+            echo "---" >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+            echo "✅ **All smoke tests passed!** Your refactoring works correctly." >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+            echo "These tests verify that:" >> /tmp/smoke_feedback.md
+            echo "- All modules can be imported without errors" >> /tmp/smoke_feedback.md
+            echo "- Expected functions exist and are callable" >> /tmp/smoke_feedback.md
+            echo "- Basic module structure is correct" >> /tmp/smoke_feedback.md
+            all_passed=true
+          else
+            echo "---" >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+            echo "⚠️ **Some tests failed.** Please fix the issues above." >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+            echo "### Debug Locally:" >> /tmp/smoke_feedback.md
+            echo "\`\`\`bash" >> /tmp/smoke_feedback.md
+            echo "# Run tests with detailed output" >> /tmp/smoke_feedback.md
+            echo "uv run pytest tests/test_smoke.py -v" >> /tmp/smoke_feedback.md
+            echo "" >> /tmp/smoke_feedback.md
+            echo "# Or run the test file directly" >> /tmp/smoke_feedback.md
+            echo "uv run python tests/test_smoke.py" >> /tmp/smoke_feedback.md
+            echo "\`\`\`" >> /tmp/smoke_feedback.md
+            all_passed=false
+          fi
+
+          echo "" >> /tmp/smoke_feedback.md
+          echo "---" >> /tmp/smoke_feedback.md
+          echo "" >> /tmp/smoke_feedback.md
+          echo "*Smoke tests verify your refactoring didn't break basic functionality. 🧪*" >> /tmp/smoke_feedback.md
+
+          echo "score=$total_score" >> $GITHUB_OUTPUT
+          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "percentage=$percentage" >> $GITHUB_OUTPUT
+          echo "grade=$grade" >> $GITHUB_OUTPUT
+          echo "all_passed=$all_passed" >> $GITHUB_OUTPUT
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const feedback = fs.readFileSync('/tmp/smoke_feedback.md', 'utf8');
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🧪 Smoke Tests Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: feedback
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: feedback
+              });
+            }
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Smoke Tests Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
+          echo "Grade: ${{ steps.final.outputs.grade }}"
+          echo ""
+          cat /tmp/smoke_feedback.md
+
+      - name: Fail if tests failed
+        if: steps.final.outputs.all_passed != 'true'
+        run: |
+          echo ""
+          echo "❌ Smoke tests must pass before merging!"
+          echo "   Please fix the failing tests and push again."
+          exit 1

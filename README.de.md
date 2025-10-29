@@ -1,60 +1,63 @@
 # Refactoring-Übung: Vom Monolithen zu Modulen
 
-> **[DE]** Dies ist die deutsche Version. **[EN]** For English instructions, see [README.md](README.md)
+> **[DE] Deutsche Version:** Sie lesen sie gerade!
+> **[EN] English Version:** Für vollständige Anweisungen auf Englisch, siehe [REFACTORING_GUIDE.md](REFACTORING_GUIDE.md)
 
 Willkommen zur Refactoring-Übung! Diese Aufgabe vertieft die Konzepte aus **Vorlesung 4: Refactoring - Vom Monolithen zu Modulen**.
 
+> **Hinweis:** Fehlermeldungen von automatisierten Prüfungen (GitHub Actions Workflows) erscheinen in **Englisch und Deutsch**.
+
 ## 📚 Lernziele
 
-Durch diese Übung wirst du:
+Durch das Abschließen dieser Übung werden Sie:
 
-1. **Den Refactoring-Workflow aus Vorlesung 4 anwenden**, um monolithischen Code in modulare Komponenten zu transformieren
-2. **Feature-Branch-Entwicklung nutzen** (Vorlesung 3 Teil 1) mit korrektem Git-Workflow
-3. **CI/CD-Praktiken befolgen** (Vorlesung 3 Teil 2) mit automatischen Qualitätsprüfungen
-4. **Inkrementelle Commits üben**, die den schrittweisen Refactoring-Prozess zeigen
-5. **An Peer-Code-Review teilnehmen**, um voneinander zu lernen
+1. **Den Refactoring-Workflow** aus Vorlesung 4 anwenden, um monolithischen Code in modulare Komponenten zu transformieren
+2. **Feature-Branch-Entwicklung** (Vorlesung 3 Teil 1) mit korrektem Git-Workflow verwenden
+3. **CI/CD-Praktiken** (Vorlesung 3 Teil 2) mit automatisierten Qualitätsprüfungen befolgen
+4. **Inkrementelle Commits** üben, die schrittweise Refactoring-Fortschritte zeigen
+5. **An Peer-Code-Reviews teilnehmen**, um voneinander zu lernen
 
 ## 🎯 Aufgabenübersicht
 
-Du wirst die monolithische `src/road_profile_viewer/main.py` (390 Zeilen) in vier fokussierte Module umstrukturieren:
+Sie werden den monolithischen `src/road_profile_viewer/main.py` (390 Zeilen) in vier fokussierte Module refaktorisieren:
 
-- `geometry.py` - Reine Mathematikfunktionen (Strahlenschnittpunkt-Berechnungen)
+- `geometry.py` - Reine Mathematikfunktionen (Strahlen-Schnittberechnungen)
 - `road.py` - Straßenprofil-Generierung
-- `visualization.py` - Dash-UI-Schicht
+- `visualization.py` - Dash UI-Schicht
 - `main.py` - Vereinfachter Einstiegspunkt (~20 Zeilen)
 
-**Das ist genau das, was du in Vorlesung 4 gelernt hast!** Folge der Vorlesung Schritt für Schritt.
+**Das ist genau das, was Sie in Vorlesung 4 gelernt haben!** Folgen Sie der Vorlesung Schritt für Schritt.
 
 ## 📋 Anforderungen
 
 ### 1. Git-Workflow (25 Punkte)
 
-- [ ] Erstelle einen Feature-Branch: `feature/refactor-to-modules`
-- [ ] Mache **mindestens 3 inkrementelle Commits** (einen pro Modul-Extraktion)
-- [ ] Schreibe **beschreibende Commit-Nachrichten** (> 10 Zeichen)
-- [ ] Erstelle einen **Pull Request** von deinem Feature-Branch zu `main`
-- [ ] **Merge NICHT** bevor alle Checks bestehen und du Peer-Review-Freigabe hast
+- [ ] Feature-Branch erstellen: `feature/refactor-to-modules`
+- [ ] **Mindestens 3 inkrementelle Commits** durchführen (einen pro Modul-Extraktion)
+- [ ] **Aussagekräftige Commit-Nachrichten** schreiben (> 10 Zeichen)
+- [ ] Einen **Pull Request** von Ihrem Feature-Branch zu `main` erstellen
+- [ ] **NICHT mergen**, bis alle Prüfungen bestanden sind und Sie Peer-Approval haben
 
 ### 2. Code-Struktur (35 Punkte)
 
-- [ ] Erstelle `geometry.py` mit:
-  - `calculate_ray_line()`-Funktion
-  - `find_intersection()`-Funktion
+- [ ] `geometry.py` erstellen mit:
+  - `calculate_ray_line()` Funktion
+  - `find_intersection()` Funktion
   - Korrekten Docstrings und Type Hints
 
-- [ ] Erstelle `road.py` mit:
-  - `generate_road_profile()`-Funktion
+- [ ] `road.py` erstellen mit:
+  - `generate_road_profile()` Funktion
   - Korrekten Docstrings
 
-- [ ] Erstelle `visualization.py` mit:
-  - `create_dash_app()`-Funktion
-  - Dem gesamten Dash-UI-Code
+- [ ] `visualization.py` erstellen mit:
+  - `create_dash_app()` Funktion
+  - Gesamter Dash UI-Code
   - Imports von `geometry` und `road`
 
-- [ ] Vereinfache `main.py` auf:
+- [ ] `main.py` vereinfachen auf:
   - **Weniger als 30 Zeilen**
   - Nur Imports von `visualization`
-  - Nur die `main()`-Funktion und `if __name__ == '__main__'`
+  - Enthält nur `main()` Funktion und `if __name__ == '__main__'`
 
 ### 3. Code-Qualität (25 Punkte)
 
@@ -64,277 +67,322 @@ Du wirst die monolithische `src/road_profile_viewer/main.py` (390 Zeilen) in vie
 - [ ] **Korrekte Imports** ohne zirkuläre Abhängigkeiten
 - [ ] **Abhängigkeitsfluss**: `main → visualization → geometry/road`
 
-### 4. Peer Review (15 Punkte)
+### 4. Peer-Review (15 Punkte)
 
-- [ ] **Review anfragen** von einem Kommilitonen
-- [ ] **Freigabe erhalten** vor dem Mergen
-- [ ] **Einen anderen PR reviewen** und konstruktives Feedback geben
+- [ ] **Review anfordern** von einem Kommilitonen
+- [ ] **Approval erhalten** vor dem Mergen
+- [ ] **PR eines anderen Studenten reviewen** und konstruktives Feedback geben
 
 ## 🚀 Schritt-für-Schritt-Anleitung
 
 ### Schritt 1: Repository klonen
 
 ```bash
-# GitHub Classroom erstellt ein Repo für dich - klone es
-git clone https://github.com/hs-aalen-software-engineering/refactoring-DEIN-USERNAME.git
-cd refactoring-DEIN-USERNAME
+# GitHub Classroom erstellt ein Repo für Sie - klonen Sie es
+git clone https://github.com/hs-aalen-software-engineering/refactoring-IHR-USERNAME.git
+cd refactoring-IHR-USERNAME
 ```
 
 ### Schritt 2: Feature-Branch erstellen
 
 ```bash
-# Stelle sicher, dass du auf main bist und aktuell
+# Stellen Sie sicher, dass Sie auf main sind und aktuell
 git checkout main
 git pull origin main
 
-# Erstelle Feature-Branch
+# Feature-Branch erstellen
 git checkout -b feature/refactor-to-modules
 
-# Überprüfe, dass du auf dem neuen Branch bist
+# Verifizieren, dass Sie auf dem neuen Branch sind
 git branch
 ```
 
 ### Schritt 3: Geometry-Modul extrahieren
 
-**Folge Vorlesung 4, Abschnitt 6.2**
+**Folgen Sie Vorlesung 4, Abschnitt 6.2**
 
-1. Erstelle `geometry.py` im **src/road_profile_viewer/ Verzeichnis** (auf gleicher Ebene wie `src/road_profile_viewer/`)
-2. Kopiere `calculate_ray_line()` und `find_intersection()` aus `src/road_profile_viewer/main.py`
-3. Füge die korrekten Imports hinzu: `import numpy as np`
-4. Füge Type Hints hinzu (siehe Vorlesung 4 Beispiel)
-5. Teste, dass es funktioniert (keine Fehler beim Import)
+1. Erstellen Sie `geometry.py` im **src/road_profile_viewer/ Verzeichnis** (gleiche Ebene wie `src/road_profile_viewer/main.py`)
+2. Kopieren Sie `calculate_ray_line()` und `find_intersection()` aus `src/road_profile_viewer/main.py`
+3. Fügen Sie korrekte Imports hinzu: `import numpy as np`
+4. Fügen Sie Type Hints hinzu (siehe Vorlesung 4 Beispiel)
+5. Testen Sie, dass es funktioniert (keine Fehler beim Importieren)
 
-**Committe deinen Fortschritt:**
+**Committen Sie Ihren Fortschritt:**
 
 ```bash
-git add geometry.py
-git commit -m "Extrahiere Geometrie-Funktionen nach geometry.py
+git add src/road_profile_viewer/geometry.py
+git commit -m "Extract geometry functions to geometry.py
 
-- Verschiebe calculate_ray_line() und find_intersection()
-- Füge Type Hints und Docstrings hinzu
-- Bereite modulares Testing vor"
+- Move calculate_ray_line() and find_intersection()
+- Add type hints and docstrings
+- Prepare for modular testing"
 ```
 
 ### Schritt 4: Road-Modul extrahieren
 
-**Folge Vorlesung 4, Abschnitt 6.3**
+**Folgen Sie Vorlesung 4, Abschnitt 6.3**
 
-1. Erstelle `road.py` im **src/road_profile_viewer/ Verzeichnis**
-2. Kopiere `generate_road_profile()` aus `src/road_profile_viewer/main.py`
-3. Füge korrekte Imports und Docstrings hinzu
+1. Erstellen Sie `road.py` im **src/road_profile_viewer/ Verzeichnis**
+2. Kopieren Sie `generate_road_profile()` aus `src/road_profile_viewer/main.py`
+3. Fügen Sie korrekte Imports und Docstrings hinzu
 
-**Committe deinen Fortschritt:**
+**Committen Sie Ihren Fortschritt:**
 
 ```bash
-git add road.py
-git commit -m "Extrahiere Straßengenerierung nach road.py
+git add src/road_profile_viewer/road.py
+git commit -m "Extract road generation to road.py
 
-- Verschiebe generate_road_profile()
-- Trenne Datengenerierung von Geometrie und UI"
+- Move generate_road_profile()
+- Separate data generation from geometry and UI"
 ```
 
 ### Schritt 5: Visualization-Modul extrahieren
 
-**Folge Vorlesung 4, Abschnitt 6.4**
+**Folgen Sie Vorlesung 4, Abschnitt 6.4**
 
-1. Erstelle `visualization.py` im **src/road_profile_viewer/ Verzeichnis**
-2. Kopiere `create_dash_app()` und den gesamten UI-Code aus `src/road_profile_viewer/main.py`
-3. Füge Imports hinzu (nutze relative Imports innerhalb des Packages):
+1. Erstellen Sie `visualization.py` im **src/road_profile_viewer/ Verzeichnis**
+2. Kopieren Sie `create_dash_app()` und den gesamten UI-Code aus `src/road_profile_viewer/main.py`
+3. **Fügen Sie Imports mit absoluten Imports hinzu:**
    ```python
-   from .geometry import calculate_ray_line, find_intersection
-   from .road import generate_road_profile
-   ```
-   **Hinweis:** Der `.` bedeutet "aus dem gleichen Package" - so funktionieren Python-Packages!
+   import numpy as np
+   import plotly.graph_objects as go
+   from dash import Dash, Input, Output, dcc, html
 
-**Committe deinen Fortschritt:**
+   from road_profile_viewer.geometry import find_intersection
+   from road_profile_viewer.road import generate_road_profile
+   ```
+
+   **⚠️ WICHTIG:** Verwenden Sie **absolute Imports** (nicht relative Imports mit `.`), um `ImportError: attempted relative import with no known parent package` zu vermeiden, wenn das Modul direkt ausgeführt wird.
+
+   **Warum absolute Imports?** Wenn Sie eine Python-Datei direkt als Skript ausführen, erkennt Python sie nicht als Teil eines Pakets, daher schlagen relative Imports (mit `.`) fehl. Absolute Imports funktionieren immer.
+
+**Committen Sie Ihren Fortschritt:**
 
 ```bash
-git add visualization.py
-git commit -m "Extrahiere UI-Schicht nach visualization.py
+git add src/road_profile_viewer/visualization.py
+git commit -m "Extract UI layer to visualization.py
 
-- Verschiebe create_dash_app() und gesamten Dash-Code
-- Importiere von geometry- und road-Modulen
-- Vollständige Separation of Concerns"
+- Move create_dash_app() and all Dash code
+- Import from geometry and road modules using absolute imports
+- Complete separation of concerns"
 ```
 
 ### Schritt 6: main.py vereinfachen
 
-**Folge Vorlesung 4, Abschnitt 6.4 (Ende)**
+**Folgen Sie Vorlesung 4, Abschnitt 6.4 (Ende)**
 
 1. Die monolithische `main.py` existiert bereits in `src/road_profile_viewer/`
-2. Ersetze sie durch eine vereinfachte Version (~20 Zeilen):
+2. Ersetzen Sie sie mit einer vereinfachten Version (~20 Zeilen):
 
 ```python
 """
-Road Profile Viewer - Einstiegspunkt
+Road Profile Viewer - Interactive 2D Visualization
+===================================================
+Main entry point for the road profile viewer application.
 
-Dies ist der Haupteinstiegspunkt für die Road Profile Viewer Anwendung.
-Alle Funktionalität ist in separaten Modulen implementiert.
+This application visualizes a road profile with camera ray intersection
+using an interactive Dash interface.
 """
 
-from .visualization import create_dash_app
+from road_profile_viewer.visualization import create_dash_app
 
 
 def main():
-    """Hauptfunktion zum Starten der Dash-Anwendung."""
+    """
+    Main function to run the Dash application.
+    """
     app = create_dash_app()
-    print("Starte Road Profile Viewer...")
-    print("Öffne deinen Browser und navigiere zu: http://127.0.0.1:8050/")
-    print("Drücke Ctrl+C um den Server zu stoppen.")
+    print("Starting Road Profile Viewer...")
+    print("Open your browser and navigate to: http://127.0.0.1:8050/")
+    print("Press Ctrl+C to stop the server.")
     app.run(debug=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 ```
 
-**Hinweis:** Auch hier nutze relative Imports (`.visualization`), da wir innerhalb des Packages sind!
+**⚠️ WICHTIG:** Verwenden Sie **absolute Imports** (`from road_profile_viewer.visualization`) statt relativer Imports (`from .visualization`). Dies ermöglicht es, das Modul direkt mit `python -m road_profile_viewer.main` oder `uv run main.py` ohne Import-Fehler auszuführen.
 
-**Committe deinen Fortschritt:**
+**Committen Sie Ihren Fortschritt:**
 
 ```bash
-git add main.py
-git commit -m "Erstelle vereinfachte main.py Einstiegspunkt
+git add src/road_profile_viewer/main.py
+git commit -m "Simplify main.py to entry point only
 
-- Nur Imports von visualization-Modul
-- Fungiert als Einstiegspunkt (~20 Zeilen)
-- Vervollständigt Refactoring zur modularen Struktur"
+- Only imports from visualization module using absolute imports
+- Acts as entry point (~20 lines)
+- Completes refactoring to modular structure"
 ```
 
-### Schritt 7: Lokale Checks ausführen
+### Schritt 7: Lokale Prüfungen ausführen
 
-**Teste alles, bevor du pushst!**
+**Testen Sie, dass alles funktioniert, bevor Sie pushen!**
 
 ```bash
-# Installiere Dependencies
+# Abhängigkeiten installieren
 uv sync
 
-# Führe Qualitätschecks aus (diese MÜSSEN bestehen)
+# Testen, dass die Anwendung ohne Import-Fehler läuft
+uv run python -m road_profile_viewer.main
+
+# Server mit Ctrl+C stoppen, dann Qualitätsprüfungen ausführen
 uv run ruff check .
 uv run ruff format --check .
 uv run pyright
 
-# Wenn du Fehler siehst, behebe sie und committe die Fixes
+# Wenn Sie Fehler sehen, beheben Sie diese und committen Sie die Fixes
 ```
 
 ### Schritt 8: Pushen und Pull Request erstellen
 
 ```bash
-# Pushe deinen Feature-Branch
+# Feature-Branch pushen
 git push -u origin feature/refactor-to-modules
 
-# Erstelle PR mit GitHub CLI (empfohlen)
-gh pr create --title "Refactor: Teile Monolithen in fokussierte Module" \
-  --body "Refactored src/road_profile_viewer/main.py in modulare Struktur:
+# PR mit GitHub CLI erstellen (empfohlen)
+gh pr create --title "Refactor: Split monolith into focused modules" \
+  --body "Refactored src/road_profile_viewer/main.py into modular structure:
 
-- geometry.py: Strahlenschnittpunkt-Mathematik
-- road.py: Straßengenerierung
+- geometry.py: Ray intersection math
+- road.py: Road generation
 - visualization.py: Dash UI
-- main.py: Einstiegspunkt (~20 Zeilen)
+- main.py: Entry point (~20 lines)
 
-Alle Code-Qualitätschecks bestehen.
-Bereit für Review!"
+All code quality checks pass.
+Ready for review!"
 
-# Oder erstelle PR manuell im GitHub-Webinterface
+# Oder PR manuell im GitHub-Webinterface erstellen
 ```
 
-### Schritt 9: Auf CI-Checks warten
+### Schritt 9: Auf CI-Prüfungen warten
 
 **GitHub Actions führt automatisch aus:**
 
-- ✅ Strukturcheck (überprüft, ob Dateien existieren, Imports korrekt sind, etc.)
-- ✅ Git-Workflow-Check (überprüft Feature-Branch, inkrementelle Commits)
-- ✅ Code-Qualitätscheck (Ruff, Pyright)
+- ✅ Structure Check (verifiziert, dass Dateien existieren, Imports korrekt sind, etc.)
+- ✅ Git Workflow Check (verifiziert Feature-Branch, inkrementelle Commits)
+- ✅ Code Quality Check (Ruff, Pyright)
 
-**Schaue im "Actions"-Tab auf GitHub für die Ergebnisse.**
+**Prüfen Sie den "Actions"-Tab auf GitHub, um Ergebnisse zu sehen.**
 
-Wenn Checks fehlschlagen, lies die Fehlermeldungen, behebe die Probleme, committe und pushe erneut.
+Falls Prüfungen fehlschlagen, lesen Sie die Fehlermeldungen, beheben Sie die Probleme, committen und pushen Sie erneut.
 
-### Schritt 10: Peer Review einholen
+### Schritt 10: Peer-Review erhalten
 
-**Teile deinen PR-Link mit einem Kommilitonen:**
+**Teilen Sie Ihren PR-Link mit einem Kommilitonen:**
 
 ```
 Hey! Kannst du meinen Refactoring-PR reviewen?
-https://github.com/hs-aalen-software-engineering/refactoring-DEIN-USERNAME/pull/1
+https://github.com/hs-aalen-software-engineering/refactoring-IHR-USERNAME/pull/1
 ```
 
-**Als Reviewer überprüfe:**
+**Als Reviewer prüfen Sie:**
 
 - [ ] PR ist vom `feature/refactor-to-modules` Branch
 - [ ] Mindestens 3 inkrementelle Commits existieren
 - [ ] Alle 4 Dateien existieren (`geometry.py`, `road.py`, `visualization.py`, `main.py`)
 - [ ] `main.py` ist vereinfacht (< 30 Zeilen)
-- [ ] Funktionen sind in den korrekten Modulen
+- [ ] Funktionen sind in korrekten Modulen
 - [ ] Imports fließen korrekt (keine zirkulären Abhängigkeiten)
-- [ ] Alle CI-Checks bestehen (grüne Häkchen)
+- [ ] Alle CI-Prüfungen bestehen (grüne Häkchen)
 
 **Wie man approved:**
 
-1. Gehe zum PR
-2. Klicke "Files changed" Tab
-3. Reviewe den Code
-4. Klicke "Review changes" → "Approve" → "Submit review"
+1. Gehen Sie zum PR
+2. Klicken Sie auf "Files changed" Tab
+3. Reviewen Sie den Code
+4. Klicken Sie auf "Review changes" → "Approve" → "Submit review"
 
 ### Schritt 11: PR mergen
 
-**Sobald du hast:**
-- ✅ Alle CI-Checks bestehen
-- ✅ Peer-Review-Freigabe
+**Sobald Sie haben:**
+- ✅ Alle CI-Prüfungen bestanden
+- ✅ Peer-Review-Approval
 
-**Merge deinen PR:**
+**Mergen Sie Ihren PR:**
 
 ```bash
 # Mit GitHub CLI
 gh pr merge --squash
 
-# Oder klicke "Merge pull request" im GitHub-Webinterface
+# Oder klicken Sie auf "Merge pull request" im GitHub-Webinterface
 ```
 
-**Glückwunsch! Du hast die Refactoring-Übung abgeschlossen! 🎉**
+**Herzlichen Glückwunsch! Sie haben die Refactoring-Übung abgeschlossen! 🎉**
 
-## 🔍 Wie du bewertet wirst
+## 🔍 Wie Sie bewertet werden
 
-### Automatische Checks (85 Punkte)
+### Automatisierte Prüfungen (85 Punkte)
 
-GitHub Actions überprüft automatisch:
+GitHub Actions verifiziert automatisch:
 
-| Check | Punkte | Was wird überprüft |
-|-------|--------|-------------------|
-| **Strukturcheck** | 35 | Alle Dateien existieren, Funktionen in korrekten Modulen, Imports korrekt |
-| **Git-Workflow** | 25 | Feature-Branch, 3+ Commits, beschreibende Nachrichten |
-| **Code-Qualität** | 25 | Ruff, Pyright bestehen; keine zirkulären Abhängigkeiten |
+| Prüfung | Punkte | Was geprüft wird |
+|---------|--------|------------------|
+| **Structure Check** | 35 | Alle Dateien existieren, Funktionen in korrekten Modulen, Imports korrekt |
+| **Git Workflow** | 25 | Feature-Branch, 3+ Commits, aussagekräftige Nachrichten |
+| **Code Quality** | 25 | Ruff, Pyright bestehen; keine zirkulären Abhängigkeiten |
 
-### Manuelle Überprüfung (15 Punkte)
+### Manuelle Prüfung (15 Punkte)
 
-Dozent überprüft:
+Dozent verifiziert:
 
-- Du hast Peer-Review-Freigabe erhalten
+- Sie haben Peer-Review-Approval erhalten
 - Das Review war substantiell (nicht nur "LGTM")
 
 ## ❓ Fehlerbehebung
 
+### "ImportError: attempted relative import with no known parent package"
+
+Dies ist der häufigste Fehler! Er tritt auf, wenn relative Imports (`.module`) in Dateien verwendet werden, die direkt als Skripte ausgeführt werden.
+
+**Problem:**
+```python
+# ❌ Dies schlägt fehl, wenn main.py direkt ausgeführt wird:
+from .visualization import create_dash_app
+from .geometry import find_intersection
+```
+
+**Lösung:**
+```python
+# ✅ Verwenden Sie stattdessen absolute Imports:
+from road_profile_viewer.visualization import create_dash_app
+from road_profile_viewer.geometry import find_intersection
+```
+
+**Warum?** Python erkennt relative Imports nur, wenn eine Datei als Teil eines Pakets importiert wird. Wenn Sie eine Datei direkt ausführen (`python main.py` oder `uv run main.py`), weiß Python nicht, dass sie Teil eines Pakets ist.
+
+**Wenden Sie diesen Fix an auf:**
+- `src/road_profile_viewer/main.py`: Import vom `visualization` Modul
+- `src/road_profile_viewer/visualization.py`: Import von `geometry` und `road` Modulen
+
+**Verifizierung:**
+```bash
+# Dies sollte ohne Fehler funktionieren:
+uv run python -m road_profile_viewer.main
+# Sie sollten sehen: "Starting Road Profile Viewer..."
+```
+
 ### "Import-Fehler beim lokalen Ausführen"
 
-Stelle sicher, dass du alle Module im **src/road_profile_viewer/ Verzeichnis** erstellst. Das ist die korrekte Python-Package-Struktur!
+Stellen Sie sicher, dass Sie alle Module im **src/road_profile_viewer/ Verzeichnis** erstellen. Dies ist die korrekte Python-Paketstruktur!
 
 ```
 ✅ Korrekte Struktur:
-road-profile-viewer-DEIN-USERNAME/
+road-profile-viewer-IHR-USERNAME/
 ├── README.md
 ├── pyproject.toml
 ├── tests/
 │   └── test_smoke.py
 └── src/
-    └── road_profile_viewer/       ← Alle Module gehen HIERHIN
+    └── road_profile_viewer/       ← Alle Module kommen HIERHIN
         ├── __init__.py
-        ├── geometry.py            ← ERSTELLE DIES
-        ├── road.py                ← ERSTELLE DIES
-        ├── visualization.py       ← ERSTELLE DIES
-        └── main.py                ← VEREINFACHE DIES (ursprünglich 390 Zeilen → ~20 Zeilen)
+        ├── geometry.py            ← ERSTELLEN SIE DIES
+        ├── road.py                ← ERSTELLEN SIE DIES
+        ├── visualization.py       ← ERSTELLEN SIE DIES
+        └── main.py                ← VEREINFACHEN SIE DIES (ursprünglich 390 Zeilen → ~20 Zeilen)
 
 ❌ Falsche Struktur:
-road-profile-viewer-DEIN-USERNAME/
+road-profile-viewer-IHR-USERNAME/
 ├── geometry.py                    ← FALSCH! Nicht in src/
 ├── road.py                        ← FALSCH! Nicht in src/
 └── src/
@@ -344,13 +392,13 @@ road-profile-viewer-DEIN-USERNAME/
 
 ### "Ruff-Fehler"
 
-Wenn du Ruff-Fehler bekommst, behebe sie! Die monolithische `main.py` folgt bereits PEP 8, aber beim Extrahieren könntest du Probleme einführen:
+Wenn Sie Ruff-Fehler bekommen, beheben Sie sie! Die monolithische `main.py` folgt bereits PEP 8, aber beim Extrahieren von Code könnten Sie Probleme einführen:
 
 ```python
 # ❌ Häufige Fehler beim Extrahieren:
-def generate_road_profile(num_points=100,x_max=80):  # Fehlendes Leerzeichen nach Komma
+def generate_road_profile(num_points=100,x_max=80):  # Fehlende Leerzeichen nach Komma
     y=0.015 * x_norm**3 * x_max                      # Fehlende Leerzeichen um =
-    return x,y                                        # Fehlendes Leerzeichen nach Komma
+    return x,y                                        # Fehlende Leerzeichen nach Komma
 
 # ✅ Korrekt:
 def generate_road_profile(num_points=100, x_max=80):
@@ -358,19 +406,26 @@ def generate_road_profile(num_points=100, x_max=80):
     return x, y
 ```
 
-**Auto-Fix für die meisten Probleme:**
+**Auto-Fix der meisten Probleme:**
 ```bash
 uv run ruff check --fix .
 uv run ruff format .
 ```
 
-### "Strukturcheck schlägt fehl: main.py zu lang"
+### "Structure-Check schlägt fehl: main.py zu lang"
 
-Deine `main.py` sollte **~20 Zeilen** sein, nicht 390! Du solltest eine **neue** `main.py` mit nur dem Einstiegspunkt erstellen, nicht die gesamte Originaldatei kopieren.
+Ihre `main.py` sollte **~20 Zeilen** sein, nicht 390! Sie sollten eine **neue** `main.py` nur mit dem Einstiegspunkt erstellen, nicht die gesamte ursprüngliche Datei kopieren.
+
+Die vereinfachte `main.py` sollte nur:
+1. Vom `visualization` Modul importieren
+2. `main()` Funktion definieren
+3. `if __name__ == "__main__":` Block haben
+
+Alles andere gehört in andere Module!
 
 ### "Zirkuläre Abhängigkeit erkannt"
 
-Stelle sicher, dass Abhängigkeiten in eine Richtung fließen:
+Stellen Sie sicher, dass Abhängigkeiten in eine Richtung fließen:
 
 ```
 ✅ Korrekt:
@@ -382,18 +437,18 @@ geometry.py → visualization.py → geometry.py (ZIRKULÄR!)
 
 **Regel:** Module niedrigerer Ebene (`geometry.py`, `road.py`) sollten NICHT von Modulen höherer Ebene (`visualization.py`, `main.py`) importieren.
 
-### "Keine Peer-Review-Freigabe"
+### "Kein Peer-Review-Approval"
 
-Frage einen Kommilitonen! Teile deinen PR-Link im Kurs-Chat oder während der Vorlesung.
+Fragen Sie einen Kommilitonen! Teilen Sie Ihren PR-Link im Kurs-Chat oder während der Vorlesung.
 
-Wenn du Hilfe beim Finden eines Reviewers brauchst, kontaktiere den Dozenten.
+Falls Sie Hilfe beim Finden eines Reviewers brauchen, kontaktieren Sie den Dozenten.
 
-### "CI-Checks laufen nicht"
+### "CI-Prüfungen laufen nicht"
 
-Stelle sicher:
-1. Du hast einen PR erstellt (nicht nur auf main gepusht)
-2. Der PR ist von deinem Feature-Branch zu `main`
-3. Schaue im "Actions"-Tab nach Fehlern
+Stellen Sie sicher:
+1. Sie haben einen PR erstellt (nicht nur zu main gepusht)
+2. Der PR ist von Ihrem Feature-Branch zu `main`
+3. Prüfen Sie den "Actions"-Tab auf Fehler
 
 ## 📚 Referenz
 
@@ -404,15 +459,47 @@ Stelle sicher:
 
 ## 🆘 Hilfe bekommen
 
-1. **Lies Vorlesung 4 nochmal** - Sie hat Schritt-für-Schritt-Anleitungen!
-2. **Prüfe CI-Fehlermeldungen** - Sie sagen dir genau, was falsch ist
-3. **Frage im Kurs-Chat** - Helft einander!
-4. **Sprechstunde** - Dozent ist für Fragen verfügbar
+1. **Vorlesung 4 nochmal lesen** - Sie hat Schritt-für-Schritt-Anweisungen!
+2. **CI-Fehlermeldungen prüfen** - Sie sagen Ihnen genau, was falsch ist
+3. **Im Kurs-Chat fragen** - Helfen Sie einander!
+4. **Sprechstunden** - Dozent ist für Fragen verfügbar
+
+## 📝 Schnellreferenz: Vollständige Import-Struktur
+
+So sollten Ihre Imports in jeder Datei aussehen:
+
+**geometry.py:**
+```python
+import numpy as np
+# Keine Imports von anderen Projektmodulen
+```
+
+**road.py:**
+```python
+import numpy as np
+# Keine Imports von anderen Projektmodulen
+```
+
+**visualization.py:**
+```python
+import numpy as np
+import plotly.graph_objects as go
+from dash import Dash, Input, Output, dcc, html
+
+from road_profile_viewer.geometry import find_intersection
+from road_profile_viewer.road import generate_road_profile
+```
+
+**main.py:**
+```python
+from road_profile_viewer.visualization import create_dash_app
+```
 
 Viel Erfolg! 🚀
 
 ---
 
-**Aufgabe erstellt**: 2025-10-29
+**Aufgabe erstellt**: 29.10.2025
 **Kurs**: Software Engineering - HS Aalen
 **Dozent**: Dominik Mueller
+**Letzte Aktualisierung**: 29.10.2025 (Import-Struktur korrigiert)

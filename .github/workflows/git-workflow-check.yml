@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   check-workflow:
     runs-on: ubuntu-latest
@@ -14,90 +18,267 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full Git history
 
+      - name: Initialize scoring
+        id: init
+        run: |
+          echo "" > /tmp/git_feedback.md
+          echo "## 🌿 Git Workflow Check Results" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
       - name: Check PR is from feature branch
+        id: feature_branch
         run: |
           echo "🔍 Checking PR branch name..."
 
+          score=0
+          max_score=2
+          feedback="### 🌿 Feature Branch (0/$max_score points)\n\n"
+
           branch_name="${{ github.head_ref }}"
 
-          if [[ ! "$branch_name" =~ ^feature/ ]]; then
+          if [[ "$branch_name" =~ ^feature/ ]]; then
+            echo "✅ PR is from feature branch: $branch_name"
+            feedback+="✅ PR is from feature branch: **$branch_name** (+2 points)\n"
+            score=2
+          else
             echo "❌ PR must be from a feature/* branch"
             echo "   Current branch: $branch_name"
-            echo ""
-            echo "💡 Hint: Create branch with:"
-            echo "   git checkout -b feature/refactor-to-modules"
-            exit 1
+            feedback+="❌ PR is from branch: **$branch_name** (should be feature/*) (0 points)\n"
           fi
 
-          echo "✅ PR is from feature branch: $branch_name"
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **Hint:** Create branch with: \`git checkout -b feature/refactor-to-modules\`" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
 
       - name: Check multiple commits (incremental refactoring)
+        id: commits
         run: |
           echo "🔍 Checking commit history..."
+
+          score=0
+          max_score=4
+          feedback="### 📝 Commit History (0/$max_score points)\n\n"
 
           # Count commits in this PR
           commit_count=$(git rev-list --count HEAD ^origin/main)
 
           echo "Found $commit_count commits in this PR"
+          feedback+="Found **$commit_count commits** in this PR\n\n"
 
-          if [ "$commit_count" -lt 3 ]; then
-            echo ""
-            echo "❌ Expected at least 3 commits (one per module extraction), found $commit_count"
-            echo ""
-            echo "💡 Hint: Make incremental commits as shown in Lecture 4:"
-            echo "   1. Extract geometry.py → commit"
-            echo "   2. Extract road.py → commit"
-            echo "   3. Extract visualization.py → commit"
-            echo "   4. Simplify main.py → commit"
-            echo ""
-            echo "   This shows your refactoring progression and makes code review easier!"
-            exit 1
+          if [ "$commit_count" -ge 4 ]; then
+            echo "✅ Great! $commit_count commits shows excellent incremental work"
+            feedback+="✅ Excellent incremental refactoring with $commit_count commits (+4 points)\n"
+            score=4
+          elif [ "$commit_count" -eq 3 ]; then
+            echo "✅ Good! 3 commits shows incremental work"
+            feedback+="✅ Good incremental refactoring with 3 commits (+3 points)\n"
+            score=3
+          elif [ "$commit_count" -eq 2 ]; then
+            echo "⚠️ Only 2 commits - could be more incremental"
+            feedback+="⚠️ Only 2 commits - more granularity would be better (+2 points)\n"
+            score=2
+          elif [ "$commit_count" -eq 1 ]; then
+            echo "⚠️ Only 1 commit - should break down into steps"
+            feedback+="⚠️ Only 1 commit - should break into incremental steps (+1 point)\n"
+            score=1
+          else
+            echo "❌ No commits found"
+            feedback+="❌ No commits found (0 points)\n"
           fi
 
-          echo "✅ Found $commit_count commits (good incremental refactoring!)"
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+          if [ $score -lt 3 ]; then
+            echo "💡 **Hint:** Make incremental commits:" >> /tmp/git_feedback.md
+            echo "1. Extract geometry.py → commit" >> /tmp/git_feedback.md
+            echo "2. Extract road.py → commit" >> /tmp/git_feedback.md
+            echo "3. Extract visualization.py → commit" >> /tmp/git_feedback.md
+            echo "4. Simplify main.py → commit" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
 
       - name: Check commit messages quality
+        id: messages
         run: |
           echo "🔍 Checking commit message quality..."
+
+          score=0
+          max_score=4
+          feedback="### ✍️ Commit Message Quality (0/$max_score points)\n\n"
 
           # Get all commit messages in this PR
           git log --format=%s origin/main..HEAD > /tmp/commit_messages.txt
 
           short_messages=0
-          line_num=0
+          descriptive_messages=0
+          total_messages=0
 
           while IFS= read -r msg; do
-            line_num=$((line_num + 1))
+            total_messages=$((total_messages + 1))
+            msg_length=${#msg}
 
-            # Check message length (should be > 10 chars)
-            if [ ${#msg} -lt 10 ]; then
-              echo "❌ Commit $line_num has a too-short message: '$msg'"
-              short_messages=1
+            if [ $msg_length -lt 10 ]; then
+              echo "❌ Too short: '$msg'"
+              feedback+="❌ Too short ($msg_length chars): \"$msg\"\n"
+              short_messages=$((short_messages + 1))
+            elif [ $msg_length -lt 20 ]; then
+              echo "⚠️ Could be more descriptive: '$msg'"
+              feedback+="⚠️ Could be more descriptive: \"$msg\"\n"
             else
-              echo "✅ Commit $line_num: '$msg'"
+              echo "✅ Good message: '$msg'"
+              feedback+="✅ Good message: \"$msg\"\n"
+              descriptive_messages=$((descriptive_messages + 1))
             fi
           done < /tmp/commit_messages.txt
 
-          if [ $short_messages -eq 1 ]; then
-            echo ""
-            echo "💡 Hint: Write descriptive commit messages that explain WHAT and WHY:"
-            echo "   ✅ Good: 'Extract geometry functions to geometry.py'"
-            echo "   ❌ Bad: 'update' or 'fix'"
-            exit 1
+          # Calculate score
+          if [ $total_messages -eq 0 ]; then
+            score=0
+          else
+            # Each descriptive message is worth 1 point, max 4 points
+            score=$descriptive_messages
+            if [ $score -gt $max_score ]; then
+              score=$max_score
+            fi
           fi
 
-          echo ""
-          echo "✅ All commit messages are descriptive!"
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "\n$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **Hint:** Write descriptive commit messages (20+ characters) that explain WHAT and WHY" >> /tmp/git_feedback.md
+            echo "- ✅ Good: \"Extract geometry functions to geometry.py\"" >> /tmp/git_feedback.md
+            echo "- ❌ Bad: \"update\" or \"fix\"" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
+
+      - name: Calculate final score
+        id: final
+        if: always()
+        run: |
+          # Sum up all scores
+          total_score=0
+          total_max=0
+
+          # Feature branch
+          total_score=$((total_score + ${{ steps.feature_branch.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.feature_branch.outputs.max_score || 0 }}))
+
+          # Commits
+          total_score=$((total_score + ${{ steps.commits.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.commits.outputs.max_score || 0 }}))
+
+          # Messages
+          total_score=$((total_score + ${{ steps.messages.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.messages.outputs.max_score || 0 }}))
+
+          percentage=$((total_score * 100 / total_max))
+
+          echo "---" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+          echo "### 🎯 Final Score: $total_score / $total_max points ($percentage%)" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          if [ $percentage -ge 90 ]; then
+            grade="A"
+            emoji="🌟"
+            comment="Excellent Git workflow!"
+          elif [ $percentage -ge 80 ]; then
+            grade="B"
+            emoji="👍"
+            comment="Good Git workflow!"
+          elif [ $percentage -ge 70 ]; then
+            grade="C"
+            emoji="👌"
+            comment="Acceptable workflow, but room for improvement"
+          elif [ $percentage -ge 60 ]; then
+            grade="D"
+            emoji="⚠️"
+            comment="Git workflow needs improvement"
+          else
+            grade="F"
+            emoji="❌"
+            comment="Significant Git workflow issues need to be addressed"
+          fi
+
+          echo "**Grade: $grade** $emoji" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+          echo "*$comment*" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+          echo "---" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+          echo "*This automated check validates your Git workflow practices. Keep up the good work! 🚀*" >> /tmp/git_feedback.md
+
+          echo "score=$total_score" >> $GITHUB_OUTPUT
+          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "percentage=$percentage" >> $GITHUB_OUTPUT
+          echo "grade=$grade" >> $GITHUB_OUTPUT
+
+      - name: Post PR comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const feedback = fs.readFileSync('/tmp/git_feedback.md', 'utf8');
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🌿 Git Workflow Check Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: feedback
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: feedback
+              });
+            }
 
       - name: Summary
+        if: always()
         run: |
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🎉 Git Workflow Check Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "✅ PR is from feature branch"
-          echo "✅ Multiple incremental commits"
-          echo "✅ Descriptive commit messages"
+          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
+          echo "Grade: ${{ steps.final.outputs.grade }}"
           echo ""
-          echo "Great Git workflow! 🚀"
+          cat /tmp/git_feedback.md

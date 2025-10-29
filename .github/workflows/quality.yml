@@ -6,6 +6,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -26,29 +30,331 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run Ruff linter
+      - name: Initialize scoring
+        id: init
         run: |
-          uv run ruff check . || {
-            echo ""
-            echo "❌ Ruff linting failed"
-            echo "💡 Fix locally: uv run ruff check --fix ."
-            exit 1
-          }
+          echo "" > /tmp/quality_feedback.md
+          echo "## 🔍 Code Quality Check Results" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+      - name: Run Ruff linter
+        id: ruff
+        continue-on-error: true
+        run: |
+          echo "🔍 Running Ruff linter..."
+
+          # Run ruff and capture output
+          if uv run ruff check . --output-format=concise > /tmp/ruff_output.txt 2>&1; then
+            ruff_passed=true
+            error_count=0
+            echo "✅ Ruff linting passed!"
+          else
+            ruff_passed=false
+            error_count=$(grep -c "error\|warning" /tmp/ruff_output.txt || echo "0")
+            echo "❌ Ruff linting failed with errors"
+            cat /tmp/ruff_output.txt
+          fi
+
+          score=0
+          max_score=5
+          feedback="### 🔎 Ruff Linting (0/$max_score points)\n\n"
+
+          if [ "$ruff_passed" = true ]; then
+            feedback+="✅ **No linting errors found** (+5 points)\n"
+            score=5
+          else
+            # Get detailed error breakdown
+            feedback+="❌ Found **linting issues**:\n\n"
+            feedback+="\`\`\`\n"
+            head -20 /tmp/ruff_output.txt >> /tmp/ruff_errors.txt
+            feedback+="$(cat /tmp/ruff_errors.txt)\n"
+            feedback+="\`\`\`\n\n"
+
+            if [ "$error_count" -le 3 ]; then
+              feedback+="⚠️ Minor issues found (+3 points)\n"
+              score=3
+            elif [ "$error_count" -le 6 ]; then
+              feedback+="⚠️ Several issues found (+1 point)\n"
+              score=1
+            else
+              feedback+="❌ Many issues found (0 points)\n"
+            fi
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **How to fix:** Run \`uv run ruff check --fix .\` locally to auto-fix most issues" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+          fi
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$ruff_passed" >> $GITHUB_OUTPUT
 
       - name: Check formatting
+        id: format
+        continue-on-error: true
         run: |
-          uv run ruff format --check . || {
-            echo ""
+          echo "🔍 Checking code formatting..."
+
+          score=0
+          max_score=3
+          feedback="### 📐 Code Formatting (0/$max_score points)\n\n"
+
+          if uv run ruff format --check . > /tmp/format_output.txt 2>&1; then
+            echo "✅ Code formatting is correct!"
+            feedback+="✅ **All files are properly formatted** (+3 points)\n"
+            score=3
+            format_passed=true
+          else
             echo "❌ Code formatting check failed"
-            echo "💡 Fix locally: uv run ruff format ."
-            exit 1
-          }
+            cat /tmp/format_output.txt
+
+            # Count files that need formatting
+            file_count=$(grep -c "Would reformat:" /tmp/format_output.txt || echo "0")
+
+            feedback+="❌ Found **formatting issues**:\n\n"
+            feedback+="\`\`\`\n"
+            cat /tmp/format_output.txt >> /tmp/quality_feedback.md
+            feedback+="\`\`\`\n\n"
+
+            if [ "$file_count" -le 2 ]; then
+              feedback+="⚠️ Minor formatting issues (+1 point)\n"
+              score=1
+            else
+              feedback+="❌ Multiple files need formatting (0 points)\n"
+            fi
+            format_passed=false
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **How to fix:** Run \`uv run ruff format .\` locally to format all files" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+          fi
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$format_passed" >> $GITHUB_OUTPUT
 
       - name: Run Pyright
+        id: pyright
+        continue-on-error: true
         run: |
-          uv run pyright || {
-            echo ""
+          echo "🔍 Running Pyright type checker..."
+
+          score=0
+          max_score=7
+          feedback="### 🔬 Type Checking (0/$max_score points)\n\n"
+
+          if uv run pyright > /tmp/pyright_output.txt 2>&1; then
+            echo "✅ Type checking passed!"
+            feedback+="✅ **No type errors found** (+7 points)\n"
+            score=7
+            pyright_passed=true
+          else
             echo "❌ Type checking failed"
-            echo "💡 Fix type errors and ensure all imports are correct"
-            exit 1
-          }
+            cat /tmp/pyright_output.txt
+
+            # Extract error count from pyright output
+            error_line=$(grep "error" /tmp/pyright_output.txt | tail -1 || echo "")
+            error_count=$(echo "$error_line" | grep -oP '\d+(?= error)' || echo "0")
+            warning_count=$(echo "$error_line" | grep -oP '\d+(?= warning)' || echo "0")
+
+            feedback+="❌ Found **type checking issues**:\n\n"
+            feedback+="\`\`\`\n"
+            tail -30 /tmp/pyright_output.txt >> /tmp/quality_feedback.md
+            feedback+="\`\`\`\n\n"
+
+            if [ "$error_count" -eq 0 ] && [ "$warning_count" -gt 0 ]; then
+              feedback+="⚠️ Only warnings found (+5 points)\n"
+              score=5
+            elif [ "$error_count" -le 3 ]; then
+              feedback+="⚠️ Minor type errors (+3 points)\n"
+              score=3
+            elif [ "$error_count" -le 6 ]; then
+              feedback+="⚠️ Several type errors (+1 point)\n"
+              score=1
+            else
+              feedback+="❌ Many type errors (0 points)\n"
+            fi
+            pyright_passed=false
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **How to fix:** Ensure all imports are correct and add proper type hints" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+          fi
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$pyright_passed" >> $GITHUB_OUTPUT
+
+      - name: Calculate final score
+        id: final
+        if: always()
+        run: |
+          # Sum up all scores
+          total_score=0
+          total_max=0
+
+          # Ruff
+          total_score=$((total_score + ${{ steps.ruff.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.ruff.outputs.max_score || 0 }}))
+
+          # Format
+          total_score=$((total_score + ${{ steps.format.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.format.outputs.max_score || 0 }}))
+
+          # Pyright
+          total_score=$((total_score + ${{ steps.pyright.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.pyright.outputs.max_score || 0 }}))
+
+          percentage=$((total_score * 100 / total_max))
+
+          echo "---" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+          echo "### 🎯 Final Score: $total_score / $total_max points ($percentage%)" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          if [ $percentage -ge 90 ]; then
+            grade="A"
+            emoji="🌟"
+            comment="Excellent code quality!"
+            all_passed=true
+          elif [ $percentage -ge 80 ]; then
+            grade="B"
+            emoji="👍"
+            comment="Good code quality with minor issues"
+            all_passed=false
+          elif [ $percentage -ge 70 ]; then
+            grade="C"
+            emoji="👌"
+            comment="Acceptable quality, but needs improvement"
+            all_passed=false
+          elif [ $percentage -ge 60 ]; then
+            grade="D"
+            emoji="⚠️"
+            comment="Code quality needs significant improvement"
+            all_passed=false
+          else
+            grade="F"
+            emoji="❌"
+            comment="Critical code quality issues must be fixed"
+            all_passed=false
+          fi
+
+          echo "**Grade: $grade** $emoji" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+          echo "*$comment*" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          # Check if all tests passed
+          ruff_passed="${{ steps.ruff.outputs.passed }}"
+          format_passed="${{ steps.format.outputs.passed }}"
+          pyright_passed="${{ steps.pyright.outputs.passed }}"
+
+          if [ "$ruff_passed" = "true" ] && [ "$format_passed" = "true" ] && [ "$pyright_passed" = "true" ]; then
+            echo "---" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+            echo "✅ **All quality checks passed!** You can merge this PR." >> /tmp/quality_feedback.md
+            all_checks_passed=true
+          else
+            echo "---" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+            echo "⚠️ **Quality checks failed.** Please fix the issues above before merging." >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+            echo "### Quick Fix Commands:" >> /tmp/quality_feedback.md
+            echo "\`\`\`bash" >> /tmp/quality_feedback.md
+            echo "# Fix most linting issues automatically" >> /tmp/quality_feedback.md
+            echo "uv run ruff check --fix ." >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+            echo "# Format all files" >> /tmp/quality_feedback.md
+            echo "uv run ruff format ." >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+            echo "# Then check type errors" >> /tmp/quality_feedback.md
+            echo "uv run pyright" >> /tmp/quality_feedback.md
+            echo "\`\`\`" >> /tmp/quality_feedback.md
+            all_checks_passed=false
+          fi
+
+          echo "" >> /tmp/quality_feedback.md
+          echo "---" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+          echo "*This automated check validates your code quality. High-quality code is essential! 🚀*" >> /tmp/quality_feedback.md
+
+          echo "score=$total_score" >> $GITHUB_OUTPUT
+          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "percentage=$percentage" >> $GITHUB_OUTPUT
+          echo "grade=$grade" >> $GITHUB_OUTPUT
+          echo "all_passed=$all_checks_passed" >> $GITHUB_OUTPUT
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const feedback = fs.readFileSync('/tmp/quality_feedback.md', 'utf8');
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🔍 Code Quality Check Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: feedback
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: feedback
+              });
+            }
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Code Quality Check Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
+          echo "Grade: ${{ steps.final.outputs.grade }}"
+          echo ""
+          cat /tmp/quality_feedback.md
+
+      - name: Fail if quality checks failed
+        if: steps.final.outputs.all_passed != 'true'
+        run: |
+          echo ""
+          echo "❌ Quality checks must pass before merging!"
+          echo "   Please fix the issues and push again."
+          exit 1

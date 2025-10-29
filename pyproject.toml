@@ -1,0 +1,77 @@
+[project]
+name = "road-profile-viewer"
+version = "0.1.0"
+description = "Interactive 2D road profile viewer with camera ray intersection using Dash and Plotly"
+readme = "README.md"
+authors = [
+    { name = "your_name", email = "your.name@hs-aalen.de" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "dash>=2.14.0",
+    "plotly>=5.18.0",
+    "numpy>=1.26.0",
+]
+
+[project.scripts]
+road-profile-viewer = "road_profile_viewer:main"
+
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "plotly-stubs>=0.0.6",
+    "pyright>=1.1.406",
+    "ruff>=0.14.0",
+]
+
+[tool.ruff]
+line-length = 120  # Increased from 88 to accommodate longer lines
+target-version = "py312"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "B", "C4", "UP"]
+fixable = ["ALL"]
+unfixable = []  # E501 is not auto-fixable by ruff check --fix
+ignore = []  # Add "E501" here if you want to ignore line length entirely
+
+[tool.ruff.format]
+quote-style = "double"
+line-ending = "lf"
+indent-style = "space"
+preview = true
+docstring-code-format = true
+
+[tool.pyright]
+# Strikte Type-Prüfung
+typeCheckingMode = "strict"
+
+# Python-Version
+pythonVersion = "3.12"
+
+# Nur Source-Dateien einschließen
+include = ["src"]
+
+# Verzeichnisse ausschließen
+exclude = [
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+
+# Reporting-Optionen
+reportMissingTypeStubs = true
+reportUnknownMemberType = "warning"
+reportUnknownParameterType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"

@@ -1,15 +1,11 @@
 # Refactoring Exercise: From Monolith to Modules
-# Refactoring-Übung: Vom Monolithen zu Modulen
 
-**[EN]** Welcome to the refactoring exercise! This assignment reinforces the concepts from **Lecture 4: Refactoring - From Monolith to Modules**.
+> **[DE] Deutsche Version:** Für vollständige Anweisungen auf Deutsch, siehe [README.de.md](README.de.md)
+> **[EN] English Version:** You are reading it!
 
-**[DE]** Willkommen zur Refactoring-Übung! Diese Aufgabe vertieft die Konzepte aus **Vorlesung 4: Refactoring - Vom Monolithen zu Modulen**.
+Welcome to the refactoring exercise! This assignment reinforces the concepts from **Lecture 4: Refactoring - From Monolith to Modules**.
 
----
-
-> **Language Note / Sprachhinweis:**
-> **[EN]** This README contains instructions in English. Error messages from automated checks appear in both English and German.
-> **[DE]** Diese README enthält Anleitungen auf Englisch. Fehlermeldungen der automatischen Prüfungen erscheinen auf Englisch und Deutsch.
+> **Note:** Error messages from automated checks (GitHub Actions workflows) appear in **both English and German**.
 
 ## 📚 Learning Objectives
 

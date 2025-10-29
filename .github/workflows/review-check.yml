@@ -1,0 +1,294 @@
+name: PR Review Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, review_requested, review_request_removed]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Initialize scoring
+        id: init
+        run: |
+          echo "" > /tmp/review_feedback.md
+          echo "## 👥 PR Review Check Results" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+
+      - name: Check if reviewers are requested
+        id: reviewers
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            // Get PR details
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            const requestedReviewers = pr.requested_reviewers || [];
+            const requestedTeams = pr.requested_teams || [];
+            const totalRequested = requestedReviewers.length + requestedTeams.length;
+
+            let score = 0;
+            const maxScore = 5;
+            let feedback = `### 👤 Reviewer Assignment (0/${maxScore} points)\n\n`;
+
+            if (totalRequested >= 2) {
+              feedback += `✅ **${totalRequested} reviewers requested** - Great collaboration! (+5 points)\n`;
+              score = 5;
+            } else if (totalRequested === 1) {
+              const reviewerName = requestedReviewers[0]?.login || requestedTeams[0]?.name;
+              feedback += `✅ **1 reviewer requested** (${reviewerName}) (+3 points)\n`;
+              score = 3;
+            } else {
+              feedback += `❌ **No reviewers requested** (0 points)\n`;
+              feedback += `\nℹ️ Current status:\n`;
+              feedback += `- Requested reviewers: ${requestedReviewers.map(r => r.login).join(', ') || 'None'}\n`;
+              feedback += `- Requested teams: ${requestedTeams.map(t => t.name).join(', ') || 'None'}\n`;
+            }
+
+            feedback = feedback.replace(`(0/${maxScore} points)`, `(${score}/${maxScore} points)`);
+
+            fs.appendFileSync('/tmp/review_feedback.md', feedback + '\n\n');
+
+            if (score < maxScore) {
+              fs.appendFileSync('/tmp/review_feedback.md', '💡 **Hint:** Request a reviewer by clicking "Reviewers" in the right sidebar of your PR\n\n');
+            }
+
+            core.setOutput('score', score);
+            core.setOutput('max_score', maxScore);
+            core.setOutput('has_reviewers', totalRequested > 0 ? 'true' : 'false');
+
+      - name: Check if PR has approvals
+        id: approvals
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            // Get all reviews
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+
+            // Get latest review from each reviewer
+            const latestReviews = {};
+            for (const review of reviews) {
+              const userId = review.user.id;
+              if (!latestReviews[userId] || new Date(review.submitted_at) > new Date(latestReviews[userId].submitted_at)) {
+                latestReviews[userId] = review;
+              }
+            }
+
+            // Count approvals and changes requested
+            const reviewStates = Object.values(latestReviews);
+            const approvals = reviewStates.filter(r => r.state === 'APPROVED');
+            const changesRequested = reviewStates.filter(r => r.state === 'CHANGES_REQUESTED');
+            const commented = reviewStates.filter(r => r.state === 'COMMENTED');
+
+            let score = 0;
+            const maxScore = 10;
+            let feedback = `### ✅ Review Approvals (0/${maxScore} points)\n\n`;
+
+            if (changesRequested.length > 0) {
+              feedback += `⚠️ **Changes requested** by ${changesRequested.length} reviewer(s)\n`;
+              feedback += `\nReviewers who requested changes:\n`;
+              changesRequested.forEach(r => {
+                feedback += `- ${r.user.login}\n`;
+              });
+              feedback += `\n*Please address the requested changes and request re-review* (0 points)\n`;
+            } else if (approvals.length >= 2) {
+              feedback += `✅ **${approvals.length} approvals received** - Excellent! (+10 points)\n`;
+              feedback += `\nApproving reviewers:\n`;
+              approvals.forEach(r => {
+                feedback += `- ${r.user.login}\n`;
+              });
+              score = 10;
+            } else if (approvals.length === 1) {
+              feedback += `✅ **1 approval received** (+7 points)\n`;
+              feedback += `\nApproving reviewer: ${approvals[0].user.login}\n`;
+              score = 7;
+            } else if (commented.length > 0) {
+              feedback += `💬 **${commented.length} review(s) with comments** - but no approval yet (+2 points)\n`;
+              score = 2;
+            } else if (reviewStates.length > 0) {
+              feedback += `⏳ **Reviews in progress** (+1 point)\n`;
+              score = 1;
+            } else {
+              feedback += `⏳ **Waiting for review** (0 points)\n`;
+              feedback += `\nNo reviews submitted yet. Please wait for your reviewer(s) to complete their review.\n`;
+            }
+
+            feedback = feedback.replace(`(0/${maxScore} points)`, `(${score}/${maxScore} points)`);
+
+            fs.appendFileSync('/tmp/review_feedback.md', feedback + '\n\n');
+
+            if (approvals.length === 0 && changesRequested.length === 0) {
+              fs.appendFileSync('/tmp/review_feedback.md', '💡 **Hint:** Ask your reviewer to approve your PR if they\'re satisfied with the changes\n\n');
+            }
+
+            core.setOutput('score', score);
+            core.setOutput('max_score', maxScore);
+            core.setOutput('approved_count', approvals.length);
+            core.setOutput('changes_requested', changesRequested.length > 0 ? 'true' : 'false');
+
+      - name: Calculate final score
+        id: final
+        if: always()
+        run: |
+          # Sum up all scores
+          total_score=0
+          total_max=0
+
+          # Reviewers
+          total_score=$((total_score + ${{ steps.reviewers.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.reviewers.outputs.max_score || 0 }}))
+
+          # Approvals
+          total_score=$((total_score + ${{ steps.approvals.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.approvals.outputs.max_score || 0 }}))
+
+          percentage=$((total_score * 100 / total_max))
+
+          echo "---" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+          echo "### 🎯 Final Score: $total_score / $total_max points ($percentage%)" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+
+          if [ $percentage -ge 90 ]; then
+            grade="A"
+            emoji="🌟"
+            comment="Excellent! Your PR has been properly reviewed and approved!"
+          elif [ $percentage -ge 70 ]; then
+            grade="B"
+            emoji="👍"
+            comment="Good progress on reviews!"
+          elif [ $percentage -ge 50 ]; then
+            grade="C"
+            emoji="👌"
+            comment="Review process is underway"
+          elif [ $percentage -ge 30 ]; then
+            grade="D"
+            emoji="⏳"
+            comment="Waiting for reviews"
+          else
+            grade="F"
+            emoji="⚠️"
+            comment="No review activity yet"
+          fi
+
+          echo "**Grade: $grade** $emoji" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+          echo "*$comment*" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+
+          # Add status-based messaging
+          has_reviewers="${{ steps.reviewers.outputs.has_reviewers }}"
+          approved_count="${{ steps.approvals.outputs.approved_count }}"
+          changes_requested="${{ steps.approvals.outputs.changes_requested }}"
+
+          if [ "$changes_requested" = "true" ]; then
+            echo "---" >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "⚠️ **Action Required:** Address the requested changes and push updates to this PR." >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "After pushing changes, request a re-review from the reviewer(s)." >> /tmp/review_feedback.md
+          elif [ "$approved_count" -ge 1 ]; then
+            echo "---" >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "✅ **Review approved!** Your PR has received approval(s)." >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "Check that all other workflow checks (Structure, Git Workflow, Code Quality) pass before merging." >> /tmp/review_feedback.md
+          elif [ "$has_reviewers" = "true" ]; then
+            echo "---" >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "⏳ **Waiting for review...** Reviewer(s) have been notified." >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "You can ping them or wait for them to complete the review." >> /tmp/review_feedback.md
+          else
+            echo "---" >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "👥 **Next Step:** Request a reviewer for your PR." >> /tmp/review_feedback.md
+            echo "" >> /tmp/review_feedback.md
+            echo "1. Click \"Reviewers\" in the right sidebar" >> /tmp/review_feedback.md
+            echo "2. Select a classmate or your instructor" >> /tmp/review_feedback.md
+            echo "3. They'll receive a notification to review your code" >> /tmp/review_feedback.md
+          fi
+
+          echo "" >> /tmp/review_feedback.md
+          echo "---" >> /tmp/review_feedback.md
+          echo "" >> /tmp/review_feedback.md
+          echo "*This check validates your PR review process. Code review is an essential part of professional development! 🚀*" >> /tmp/review_feedback.md
+
+          echo "score=$total_score" >> $GITHUB_OUTPUT
+          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "percentage=$percentage" >> $GITHUB_OUTPUT
+          echo "grade=$grade" >> $GITHUB_OUTPUT
+
+      - name: Post PR comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const feedback = fs.readFileSync('/tmp/review_feedback.md', 'utf8');
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('👥 PR Review Check Results')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: feedback
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: feedback
+              });
+            }
+
+      - name: Summary
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 PR Review Check Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
+          echo "Grade: ${{ steps.final.outputs.grade }}"
+          echo ""
+          cat /tmp/review_feedback.md

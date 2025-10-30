@@ -255,6 +255,29 @@ Ready for review!"
 # Or create PR manually on GitHub web interface
 ```
 
+### Step 8.1: Enable Branch Protection (IMPORTANT!)
+
+**⚠️ Before proceeding, protect your main branch to prevent accidental merges:**
+
+1. Go to your repository on GitHub
+2. Click **Settings** → **Branches** (in the left sidebar)
+3. Under "Branch protection rules", click **Add rule**
+4. Configure the rule:
+   - **Branch name pattern**: `main`
+   - ✅ **Require a pull request before merging**
+   - ✅ **Require status checks to pass before merging**
+   - In the search box, add these required checks:
+     - `check-all-workflows` (Merge Ready Check)
+     - `check-structure` (Structure Check)
+     - `check-workflow` (Git Workflow Check)
+     - `quality` (Code Quality Check)
+     - `smoke-tests` (Smoke Tests)
+     - `check-review` (Review Check)
+   - ✅ **Require branches to be up to date before merging**
+5. Click **Create** (scroll down)
+
+**Why this matters:** Branch protection ensures you **cannot merge** until all automated checks pass. This prevents broken code from entering your main branch!
+
 ### Step 9: Wait for CI Checks
 
 **GitHub Actions will automatically run:**
@@ -262,8 +285,22 @@ Ready for review!"
 - ✅ Structure Check (verifies files exist, imports correct, etc.)
 - ✅ Git Workflow Check (verifies feature branch, incremental commits)
 - ✅ Code Quality Check (Ruff, Pyright)
+- ✅ Smoke Tests (verifies basic functionality works)
+- ✅ Review Check (verifies peer review process)
+- ✅ Merge Ready Check (waits for all other checks to pass)
 
 **Check the "Actions" tab on GitHub to see results.**
+
+**⚠️ IMPORTANT - DO NOT MERGE UNTIL ALL CHECKS PASS!**
+
+The **Merge Ready Check** will monitor all other workflows and only turn green when:
+- All structure checks pass
+- All code quality checks pass
+- All smoke tests pass
+- Git workflow is correct
+- You have received peer approval
+
+**If you enabled branch protection (Step 8.1), GitHub will automatically prevent merging until all required checks pass.** This is a safety mechanism to ensure code quality!
 
 If any checks fail, read the error messages, fix the issues, commit, and push again.
 
@@ -296,8 +333,16 @@ https://github.com/hs-aalen-software-engineering/refactoring-YOUR-USERNAME/pull/
 ### Step 11: Merge Your PR
 
 **Once you have:**
-- ✅ All CI checks passing
+- ✅ All CI checks passing (especially **Merge Ready Check** shows ✅)
 - ✅ Peer review approval
+- ✅ No conflicts with main branch
+
+**Verify the Merge Ready Check:**
+
+The **Merge Ready Check** workflow will show you the status of all required workflows:
+- If it shows "✅ READY TO MERGE!" - you're good to go!
+- If it shows "⏳ NOT READY - Workflows Running" - wait for all checks to complete
+- If it shows "❌ NOT READY TO MERGE" - fix failing checks first
 
 **Merge your PR:**
 
@@ -307,6 +352,8 @@ gh pr merge --squash
 
 # Or click "Merge pull request" on GitHub web interface
 ```
+
+**Note:** If you enabled branch protection, GitHub will only allow merging when all required checks pass. The "Merge pull request" button will be disabled until then.
 
 **Congratulations! You've completed the refactoring exercise! 🎉**
 

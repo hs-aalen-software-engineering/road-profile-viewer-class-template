@@ -255,6 +255,29 @@ Ready for review!"
 # Oder PR manuell im GitHub-Webinterface erstellen
 ```
 
+### Schritt 8.1: Branch Protection aktivieren (WICHTIG!)
+
+**⚠️ Bevor Sie fortfahren, schützen Sie Ihren main-Branch, um versehentliche Merges zu verhindern:**
+
+1. Gehen Sie zu Ihrem Repository auf GitHub
+2. Klicken Sie auf **Settings** → **Branches** (in der linken Seitenleiste)
+3. Unter "Branch protection rules", klicken Sie auf **Add rule**
+4. Konfigurieren Sie die Regel:
+   - **Branch name pattern**: `main`
+   - ✅ **Require a pull request before merging**
+   - ✅ **Require status checks to pass before merging**
+   - Im Suchfeld, fügen Sie diese erforderlichen Checks hinzu:
+     - `check-all-workflows` (Merge Ready Check)
+     - `check-structure` (Structure Check)
+     - `check-workflow` (Git Workflow Check)
+     - `quality` (Code Quality Check)
+     - `smoke-tests` (Smoke Tests)
+     - `check-review` (Review Check)
+   - ✅ **Require branches to be up to date before merging**
+5. Klicken Sie auf **Create** (nach unten scrollen)
+
+**Warum das wichtig ist:** Branch Protection stellt sicher, dass Sie **nicht mergen können**, bis alle automatisierten Prüfungen bestanden sind. Dies verhindert, dass fehlerhafter Code in Ihren main-Branch gelangt!
+
 ### Schritt 9: Auf CI-Prüfungen warten
 
 **GitHub Actions führt automatisch aus:**
@@ -262,8 +285,22 @@ Ready for review!"
 - ✅ Structure Check (verifiziert, dass Dateien existieren, Imports korrekt sind, etc.)
 - ✅ Git Workflow Check (verifiziert Feature-Branch, inkrementelle Commits)
 - ✅ Code Quality Check (Ruff, Pyright)
+- ✅ Smoke Tests (verifiziert, dass grundlegende Funktionalität funktioniert)
+- ✅ Review Check (verifiziert Peer-Review-Prozess)
+- ✅ Merge Ready Check (wartet, bis alle anderen Prüfungen bestanden sind)
 
 **Prüfen Sie den "Actions"-Tab auf GitHub, um Ergebnisse zu sehen.**
+
+**⚠️ WICHTIG - NICHT MERGEN, BIS ALLE PRÜFUNGEN BESTANDEN SIND!**
+
+Der **Merge Ready Check** überwacht alle anderen Workflows und wird nur grün, wenn:
+- Alle Strukturprüfungen bestanden sind
+- Alle Code-Qualitätsprüfungen bestanden sind
+- Alle Smoke-Tests bestanden sind
+- Git-Workflow korrekt ist
+- Sie Peer-Approval erhalten haben
+
+**Wenn Sie Branch Protection aktiviert haben (Schritt 8.1), verhindert GitHub automatisch das Mergen, bis alle erforderlichen Prüfungen bestanden sind.** Dies ist ein Sicherheitsmechanismus zur Gewährleistung der Code-Qualität!
 
 Falls Prüfungen fehlschlagen, lesen Sie die Fehlermeldungen, beheben Sie die Probleme, committen und pushen Sie erneut.
 
@@ -296,8 +333,16 @@ https://github.com/hs-aalen-software-engineering/refactoring-IHR-USERNAME/pull/1
 ### Schritt 11: PR mergen
 
 **Sobald Sie haben:**
-- ✅ Alle CI-Prüfungen bestanden
+- ✅ Alle CI-Prüfungen bestanden (insbesondere **Merge Ready Check** zeigt ✅)
 - ✅ Peer-Review-Approval
+- ✅ Keine Konflikte mit main-Branch
+
+**Verifizieren Sie den Merge Ready Check:**
+
+Der **Merge Ready Check** Workflow zeigt Ihnen den Status aller erforderlichen Workflows:
+- Wenn er "✅ READY TO MERGE!" zeigt - Sie können mergen!
+- Wenn er "⏳ NOT READY - Workflows Running" zeigt - warten Sie, bis alle Prüfungen abgeschlossen sind
+- Wenn er "❌ NOT READY TO MERGE" zeigt - beheben Sie zuerst fehlgeschlagene Prüfungen
 
 **Mergen Sie Ihren PR:**
 
@@ -307,6 +352,8 @@ gh pr merge --squash
 
 # Oder klicken Sie auf "Merge pull request" im GitHub-Webinterface
 ```
+
+**Hinweis:** Wenn Sie Branch Protection aktiviert haben, erlaubt GitHub das Mergen nur, wenn alle erforderlichen Prüfungen bestanden sind. Der "Merge pull request" Button wird bis dahin deaktiviert sein.
 
 **Herzlichen Glückwunsch! Sie haben die Refactoring-Übung abgeschlossen! 🎉**
 

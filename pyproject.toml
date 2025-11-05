@@ -23,6 +23,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "plotly-stubs>=0.0.6",
+    "pre-commit>=4.0.1",
     "pyright>=1.1.406",
     "pytest>=8.4.2",
     "ruff>=0.14.0",

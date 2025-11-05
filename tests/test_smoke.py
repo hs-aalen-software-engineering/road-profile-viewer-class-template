@@ -20,9 +20,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 def test_imports_work():
     """Test that all refactored modules can be imported."""
     try:
-        from road_profile_viewer import geometry, road, visualization, main
+        from road_profile_viewer import geometry, main, road, visualization
     except ImportError as e:
-        raise AssertionError(f"Import failed: {e}")
+        raise AssertionError(f"Import failed: {e}") from e
+
+    # Verify modules are actually imported
+    assert geometry is not None
+    assert road is not None
+    assert visualization is not None
+    assert main is not None
 
     print("✅ All modules import successfully!")
 

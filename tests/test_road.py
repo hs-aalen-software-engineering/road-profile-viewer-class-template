@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
+from pytest import approx
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -39,9 +39,9 @@ def test_generate_road_profile_default_parameters() -> None:
     assert isinstance(y, np.ndarray), "y should be a numpy array"
     assert len(x) == 100, "Default num_points should be 100"
     assert len(y) == 100, "y should have same length as x"
-    assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-    assert x[-1] == pytest.approx(80.0), "Road should end at x_max=80"
-    assert y[0] == pytest.approx(0.0), "Road should start at y=0 (normalized)"
+    assert x[0] == approx(0.0), "Road should start at x=0"
+    assert x[-1] == approx(80.0), "Road should end at x_max=80"
+    assert y[0] == approx(0.0), "Road should start at y=0 (normalized)"
 
 
 def test_generate_road_profile_small_num_points() -> None:
@@ -61,9 +61,9 @@ def test_generate_road_profile_small_num_points() -> None:
     # Assert
     assert len(x) == num_points, f"Should have {num_points} points"
     assert len(y) == num_points, f"y should have {num_points} points"
-    assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-    assert x[-1] == pytest.approx(x_max), f"Road should end at x_max={x_max}"
-    assert y[0] == pytest.approx(0.0), "Road should start at y=0"
+    assert x[0] == approx(0.0), "Road should start at x=0"
+    assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
+    assert y[0] == approx(0.0), "Road should start at y=0"
 
 
 def test_generate_road_profile_medium_num_points() -> None:
@@ -82,8 +82,8 @@ def test_generate_road_profile_medium_num_points() -> None:
     # Assert
     assert len(x) == num_points, f"Should have {num_points} points"
     assert len(y) == num_points, f"y should have {num_points} points"
-    assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-    assert x[-1] == pytest.approx(x_max), f"Road should end at x_max={x_max}"
+    assert x[0] == approx(0.0), "Road should start at x=0"
+    assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
 
 
 def test_generate_road_profile_large_num_points() -> None:
@@ -119,8 +119,8 @@ def test_generate_road_profile_small_x_max() -> None:
     x, y = generate_road_profile(num_points, x_max)
 
     # Assert
-    assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-    assert x[-1] == pytest.approx(x_max), f"Road should end at x_max={x_max}"
+    assert x[0] == approx(0.0), "Road should start at x=0"
+    assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
     assert np.all(x >= 0), "All x values should be non-negative"
     assert np.all(x <= x_max), f"All x values should be <= {x_max}"
 
@@ -139,8 +139,8 @@ def test_generate_road_profile_large_x_max() -> None:
     x, y = generate_road_profile(num_points, x_max)
 
     # Assert
-    assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-    assert x[-1] == pytest.approx(x_max), f"Road should end at x_max={x_max}"
+    assert x[0] == approx(0.0), "Road should start at x=0"
+    assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
     assert np.all(x >= 0), "All x values should be non-negative"
     assert np.all(x <= x_max), f"All x values should be <= {x_max}"
 
@@ -179,9 +179,9 @@ def test_generate_road_profile_output_shape_consistency() -> None:
         assert len(x) == num_points, f"x should have {num_points} points"
         assert len(y) == num_points, f"y should have {num_points} points"
         assert x.shape == y.shape, "x and y should have same shape"
-        assert x[0] == pytest.approx(0.0), "Road should start at x=0"
-        assert np.isclose(x[-1], x_max), f"Road should end at x_max={x_max}"
-        assert np.isclose(y[0], 0.0, atol=1e-10), "Road should start at y=0"
+        assert x[0] == approx(0.0), "Road should start at x=0"
+        assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
+        assert y[0] == approx(0.0, abs=1e-10), "Road should start at y=0"
 
 
 def test_generate_road_profile_minimum_viable_points() -> None:

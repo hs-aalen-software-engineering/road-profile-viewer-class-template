@@ -15,8 +15,8 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 from numpy.typing import NDArray
+from pytest import approx
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -47,7 +47,7 @@ def test_calculate_ray_line_vertical_ray() -> None:
     # Assert
     assert len(x_ray) == 2, "Vertical ray should have 2 points"
     assert np.allclose(x_ray, [camera_x, camera_x]), "Vertical ray should have constant x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     assert y_ray[1] < camera_y, "Ray should extend downward"
 
 
@@ -70,8 +70,8 @@ def test_calculate_ray_line_near_vertical_ray() -> None:
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
     assert len(y_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Near-vertical ray should have very steep slope (large y change relative to x)
     y_change = abs(y_ray[-1] - y_ray[0])
     x_change = abs(x_ray[-1] - x_ray[0])
@@ -96,8 +96,8 @@ def test_calculate_ray_line_upward_ray_negative_angle() -> None:
 
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Upward ray should be limited to 20 units
     assert np.max(x_ray) <= camera_x + 20, "Upward ray should be limited to 20 units"
     # Ray should go upward (y increases)
@@ -123,8 +123,8 @@ def test_calculate_ray_line_upward_ray_large_angle() -> None:
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
     assert len(y_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Upward ray should be limited to 20 units
     assert np.max(x_ray) <= camera_x + 20, "Upward ray should be limited to 20 units"
 
@@ -147,10 +147,10 @@ def test_calculate_ray_line_downward_ray() -> None:
 
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Downward ray should extend to x_max
-    assert np.max(x_ray) == pytest.approx(x_max), "Downward ray should extend to x_max"
+    assert np.max(x_ray) == approx(x_max), "Downward ray should extend to x_max"
     # Ray should go downward (y decreases)
     assert y_ray[-1] < y_ray[0], "Downward ray should have decreasing y values"
 
@@ -173,11 +173,11 @@ def test_calculate_ray_line_horizontal_ray() -> None:
 
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Horizontal ray should have constant y
     assert np.allclose(y_ray, camera_y), "Horizontal ray should have constant y"
-    assert np.max(x_ray) == pytest.approx(x_max), "Horizontal ray should extend to x_max"
+    assert np.max(x_ray) == approx(x_max), "Horizontal ray should extend to x_max"
 
 
 def test_calculate_ray_line_boundary_angle_180() -> None:
@@ -199,10 +199,10 @@ def test_calculate_ray_line_boundary_angle_180() -> None:
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
     assert len(y_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # At 180°, ray points horizontally to the left/down
-    assert np.max(x_ray) == pytest.approx(x_max), "Ray at 180° follows downward path to x_max"
+    assert np.max(x_ray) == approx(x_max), "Ray at 180° follows downward path to x_max"
 
 
 def test_calculate_ray_line_steep_downward_angle() -> None:
@@ -221,8 +221,8 @@ def test_calculate_ray_line_steep_downward_angle() -> None:
 
     # Assert
     assert len(x_ray) > 0, "Ray should have points"
-    assert x_ray[0] == pytest.approx(camera_x), "Ray should start at camera x"
-    assert y_ray[0] == pytest.approx(camera_y), "Ray should start at camera y"
+    assert x_ray[0] == approx(camera_x), "Ray should start at camera x"
+    assert y_ray[0] == approx(camera_y), "Ray should start at camera y"
     # Steep angle should result in large y change relative to x change
     y_change = abs(y_ray[-1] - y_ray[0])
     x_change = abs(x_ray[-1] - x_ray[0])
@@ -248,7 +248,7 @@ def test_calculate_ray_line_custom_camera_position() -> None:
     assert len(x_ray) > 0, "Ray should have points"
     assert x_ray[0] == camera_x, "Ray should start at custom camera_x"
     assert y_ray[0] == camera_y, "Ray should start at custom camera_y"
-    assert np.max(x_ray) == pytest.approx(x_max), "Ray should extend to custom x_max"
+    assert np.max(x_ray) == approx(x_max), "Ray should extend to custom x_max"
 
 
 # ==============================================================================

@@ -1,552 +1,486 @@
-# Refactoring Exercise: From Monolith to Modules
+# Road Profile Database & Upload System
 
 > **[DE] Deutsche Version:** Für vollständige Anweisungen auf Deutsch, siehe [README.de.md](README.de.md)
 > **[EN] English Version:** You are reading it!
 
-Welcome to the refactoring exercise! This assignment reinforces the concepts from **Lecture 4: Refactoring - From Monolith to Modules**.
+Welcome to the Road Profile Database & Upload System exercise! This is a **group assignment** where you will extend an existing Dash application with database persistence, multi-profile selection, and file upload capabilities.
 
 > **Note:** Error messages from automated checks (GitHub Actions workflows) appear in **both English and German**.
 
 ## 📚 Learning Objectives
 
+This exercise introduces you to **professional feature development workflows** using modern software engineering practices. You'll experience your first end-to-end development cycle - a pedagogical preview of Agile/Scrum methodologies covered in later lectures.
+
 By completing this exercise, you will:
 
-1. **Apply the refactoring workflow** from Lecture 4 to transform monolithic code into modular components
-2. **Use feature branch development** (Lecture 3 Part 1) with proper Git workflow
-3. **Follow CI/CD practices** (Lecture 3 Part 2) with automated quality checks
-4. **Practice incremental commits** showing step-by-step refactoring progression
-5. **Participate in peer code review** to learn from each other
+1. **Experience professional feature development** with proper planning, implementation, testing, and review cycles
+2. **Integrate databases** with web applications (SQLite with FastAPI/SQLModel OR TinyDB)
+3. **Design and implement REST APIs** (if using FastAPI approach)
+4. **Build multi-page Dash applications** with file upload and data validation
+5. **Apply Pydantic validation** for data integrity
+6. **Practice collaborative development** with feature branches and code reviews
+7. **Achieve high test coverage** (90%+ on new features) with quality-driven development
+8. **Document implementation decisions** and technical planning
 
 ## 🎯 Assignment Overview
 
-You will refactor the monolithic `src/road_profile_viewer/main.py` (390 lines) into four focused modules:
+You will extend the existing road profile viewer application with these features:
 
-- `geometry.py` - Pure math functions (ray intersection calculations)
-- `road.py` - Road profile generation
-- `visualization.py` - Dash UI layer
-- `main.py` - Simplified entry point (~20 lines)
+**Current State:**
+- Single default road profile (hard-coded)
+- Camera position and sight ray visualization
+- Intersection calculation and display
 
-**This is exactly what you learned in Lecture 4!** Follow the lecture step-by-step.
+**Your Task - Add:**
+1. **Dropdown selector** to choose from multiple stored road profiles
+2. **Database backend** to persist road profiles
+3. **Upload page** where users can add new profiles via JSON files
+4. **Profile preview** showing graph before saving
+5. **Profile renaming** capability on upload page
+6. **Data validation** using Pydantic models (validates uploaded JSON, e.g., reject if x/y coordinate lists have different lengths)
+
+## 🏗️ Technical Approaches
+
+You can choose between two implementation approaches with different point values:
+
+### Approach 1: FastAPI + SQLModel + SQLite (5 points possible)
+
+**Architecture:**
+- **Backend**: FastAPI REST API with endpoints for CRUD operations
+- **Database**: SQLite with SQLModel ORM
+- **Frontend**: Dash app consuming the API
+- **Migration**: Database initialization and seeding scripts
+
+**Why this approach:**
+- Industry-standard architecture (separation of concerns)
+- Scalable and testable
+- More sophisticated, unlocks full 5 points
+
+**Key Components:**
+```
+src/road_profile_viewer/
+├── api/
+│   ├── __init__.py
+│   ├── main.py          # FastAPI app
+│   └── routes.py        # API endpoints
+├── database/
+│   ├── __init__.py
+│   ├── models.py        # SQLModel database models
+│   └── connection.py    # Database setup
+├── models.py            # Pydantic validation models
+└── visualization.py     # Updated Dash app with API calls
+```
+
+### Approach 2: TinyDB (4 points possible)
+
+**Architecture:**
+- **Database**: TinyDB (JSON-based, no separate backend needed)
+- **Frontend**: Dash app directly accessing TinyDB
+- **Simpler**: All code integrated in Dash application
+
+**Why this approach:**
+- Lightweight and simple
+- No API layer needed
+- Good for learning database basics
+
+**Key Components:**
+```
+src/road_profile_viewer/
+├── database/
+│   ├── __init__.py
+│   └── db.py            # TinyDB operations
+├── models.py            # Pydantic validation models
+└── visualization.py     # Updated Dash app with TinyDB
+```
+
+**Choose based on your team's:**
+- Time availability
+- Learning goals (want to learn FastAPI?)
+- Ambition level (aiming for full 5 points?)
 
 ## 📋 Requirements
 
-### 1. Git Workflow (25 points)
+### 1. Implementation (1.5 points)
 
-- [ ] Create feature branch: `feature/refactor-to-modules`
-- [ ] Make **at least 3 incremental commits** (one per module extraction)
-- [ ] Write **descriptive commit messages** (> 10 characters)
-- [ ] Create a **Pull Request** from your feature branch to `main`
-- [ ] **Do NOT merge** until all checks pass and you have peer approval
+#### Dropdown Selector (0.6 points)
+- [ ] Add dropdown component on main page to select road profiles
+- [ ] Dropdown lists all available profiles by name
+- [ ] Selecting a profile updates the visualization
+- [ ] Default profile pre-selected on app startup
 
-### 2. Code Structure (35 points)
+#### Upload Page (0.9 points)
+- [ ] Create new page/route in Dash app (`/upload`)
+- [ ] File upload component accepting JSON files
+- [ ] Preview graph showing uploaded profile before saving
+- [ ] Text input to rename the profile
+- [ ] Confirm button to save to database
+- [ ] Success/error messages after upload
+- [ ] Navigation between main page and upload page
 
-- [ ] Create `geometry.py` with:
-  - `calculate_ray_line()` function
-  - `find_intersection()` function
-  - Proper docstrings and type hints
+### 2. Backend & Database (1.0 points)
 
-- [ ] Create `road.py` with:
-  - `generate_road_profile()` function
-  - Proper docstrings
+#### Database Schema (0.3 points)
+- [ ] Road profile model with fields: `id`, `name`, `x_coordinates`, `y_coordinates`
+- [ ] Unique constraint on profile names
+- [ ] Proper data types (list/array for coordinates)
 
-- [ ] Create `visualization.py` with:
-  - `create_dash_app()` function
-  - All Dash UI code
-  - Imports from `geometry` and `road`
+#### Database Operations (0.4 points)
+- [ ] Create (insert new profile)
+- [ ] Read (get all profiles, get by name/id)
+- [ ] Update (optional, but recommended)
+- [ ] Delete (optional, but recommended)
 
-- [ ] Simplify `main.py` to:
-  - **Less than 30 lines**
-  - Only imports from `visualization`
-  - Only contains `main()` function and `if __name__ == '__main__'`
+#### Migration/Seed (0.3 points)
+- [ ] Script to initialize database
+- [ ] Seed default profile on first run
+- [ ] Database file in `.gitignore` (not committed)
 
-### 3. Code Quality (25 points)
+**FastAPI Approach Bonus (+1 point):**
+- [ ] REST API endpoints: `GET /profiles`, `POST /profiles`, `GET /profiles/{id}`
+- [ ] Proper error handling (404, 409 conflict, 422 validation)
+- [ ] FastAPI automatic documentation (`/docs`)
+- [ ] Separation of concerns (API layer separate from Dash)
 
-- [ ] **Ruff linting** passes (no style violations)
-- [ ] **Ruff formatting** passes (code is properly formatted)
-- [ ] **Pyright** passes (no type errors)
-- [ ] **Proper imports** with no circular dependencies
-- [ ] **Dependency flow**: `main → visualization → geometry/road`
+### 3. Data Validation (included in Implementation points)
 
-### 4. Peer Review (15 points)
+- [ ] Pydantic model matching example JSON schema
+- [ ] Validation rules:
+  - Name: 1-100 characters, non-empty
+  - `x_coordinates` and `y_coordinates`: same length, at least 2 points
+  - Coordinates must be numeric (floats)
+- [ ] Clear error messages on validation failure
+- [ ] Example JSON file provided in `docs/example-road-profile.json`
 
-- [ ] **Request review** from a classmate
-- [ ] **Receive approval** before merging
-- [ ] **Review another student's PR** and provide constructive feedback
+### 4. Testing (0.5 points)
 
-## 🚀 Step-by-Step Instructions
+- [ ] **90%+ C1 coverage** on all new features
+- [ ] Unit tests for:
+  - Database operations (CRUD)
+  - API endpoints (if FastAPI approach)
+  - Pydantic validation (valid and invalid cases)
+  - Upload functionality
+  - Dropdown selection logic
+- [ ] Integration tests for upload workflow
+- [ ] Coverage report generated by pytest-cov
 
-### Step 1: Clone Your Repository
+### 5. Git Workflow & Collaboration (0.5 points)
 
-```bash
-# GitHub Classroom creates a repo for you - clone it
-git clone https://github.com/hs-aalen-software-engineering/refactoring-YOUR-USERNAME.git
-cd refactoring-YOUR-USERNAME
-```
+- [ ] **At least 2 feature branches** with descriptive names (e.g., `feature/database-setup`, `feature/upload-page`)
+- [ ] **Multiple contributors**: Each branch has commits from at least one team member
+- [ ] **Incremental commits** with descriptive messages (>20 characters)
+- [ ] **Implementation plan** documented in `docs/implementation-plan.md`
+- [ ] **LLM prompts** (if used) saved in `docs/llm-prompts/` folder
 
-### Step 2: Create Feature Branch
+### 6. Code Review (0.5 points)
 
-```bash
-# Make sure you're on main and up to date
-git checkout main
-git pull origin main
+- [ ] All features implemented via **Pull Requests**
+- [ ] PRs use the provided **PR description template**
+- [ ] Each PR reviewed by at least **one other team member**
+- [ ] Reviews include substantive feedback (not just "LGTM")
+- [ ] All CI checks pass before merge
 
-# Create feature branch
-git checkout -b feature/refactor-to-modules
+## 👥 Group Work
 
-# Verify you're on the new branch
-git branch
-```
+### Team Setup
+- **Group size**: 2-4 students
+- **Formation**: Self-organized or instructor-assigned
+- **Repository**: One repository per group via GitHub Classroom
 
-### Step 3: Extract Geometry Module
+### Collaboration Requirements
 
-**Follow Lecture 4, Section 6.2**
+1. **Implementation Plan** (`docs/implementation-plan.md`):
+   ```markdown
+   # Implementation Plan
 
-1. Create `geometry.py` in the **src/road_profile_viewer/ directory** (same level as `src/road_profile_viewer/main.py`)
-2. Copy `calculate_ray_line()` and `find_intersection()` from `src/road_profile_viewer/main.py`
-3. Add proper imports: `import numpy as np`
-4. Add type hints (see Lecture 4 example)
-5. Test that it works (no errors when importing)
+   ## Team Members
+   - [Name] - [Role/Responsibilities]
+   - [Name] - [Role/Responsibilities]
 
-**Commit your progress:**
+   ## Technical Decision
+   - [ ] FastAPI + SQLModel + SQLite (5 points)
+   - [ ] TinyDB (4 points)
 
-```bash
-git add src/road_profile_viewer/geometry.py
-git commit -m "Extract geometry functions to geometry.py
+   ## Feature Breakdown
+   | Feature | Branch | Assignee | Status |
+   |---------|--------|----------|--------|
+   | Database setup | feature/database | [Name] | ✅ |
+   | Upload page | feature/upload | [Name] | 🔄 |
 
-- Move calculate_ray_line() and find_intersection()
-- Add type hints and docstrings
-- Prepare for modular testing"
-```
-
-### Step 4: Extract Road Module
-
-**Follow Lecture 4, Section 6.3**
-
-1. Create `road.py` in the **src/road_profile_viewer/ directory**
-2. Copy `generate_road_profile()` from `src/road_profile_viewer/main.py`
-3. Add proper imports and docstrings
-
-**Commit your progress:**
-
-```bash
-git add src/road_profile_viewer/road.py
-git commit -m "Extract road generation to road.py
-
-- Move generate_road_profile()
-- Separate data generation from geometry and UI"
-```
-
-### Step 5: Extract Visualization Module
-
-**Follow Lecture 4, Section 6.4**
-
-1. Create `visualization.py` in the **src/road_profile_viewer/ directory**
-2. Copy `create_dash_app()` and all UI code from `src/road_profile_viewer/main.py`
-3. **Add imports using absolute imports:**
-   ```python
-   import numpy as np
-   import plotly.graph_objects as go
-   from dash import Dash, Input, Output, dcc, html
-
-   from road_profile_viewer.geometry import find_intersection
-   from road_profile_viewer.road import generate_road_profile
+   ## Testing Strategy
+   [How you'll achieve 90% coverage]
    ```
 
-   **⚠️ IMPORTANT:** Use **absolute imports** (not relative imports with `.`) to avoid `ImportError: attempted relative import with no known parent package` when running the module directly.
+2. **Branch Strategy**:
+   - Minimum 2 feature branches (recommendation: 3-4)
+   - Suggested branches:
+     - `feature/database-setup` - Database schema, models, seed script
+     - `feature/dropdown-selector` - Main page dropdown integration
+     - `feature/upload-page` - New upload page with preview
+     - `feature/api-endpoints` - FastAPI routes (if applicable)
 
-   **Why absolute imports?** When you run a Python file directly as a script, Python doesn't recognize it as part of a package, so relative imports (with `.`) fail. Absolute imports always work.
+3. **Work Distribution**:
+   - Each team member works on at least one feature branch
+   - Use GitHub Issues to track tasks
+   - Daily standups (document in issue comments)
 
-**Commit your progress:**
+4. **LLM Usage** (Optional but Encouraged):
+   - If you use ChatGPT, Claude, or other LLMs, save prompts
+   - Create folder: `docs/llm-prompts/`
+   - File naming: `YYYY-MM-DD-feature-name.md`
+   - Include both prompts and relevant responses
 
-```bash
-git add src/road_profile_viewer/visualization.py
-git commit -m "Extract UI layer to visualization.py
+## 🚀 Getting Started
 
-- Move create_dash_app() and all Dash code
-- Import from geometry and road modules using absolute imports
-- Complete separation of concerns"
-```
+> **Important:** You are **completely independent** in how you approach this assignment. The steps below are **suggestions** to guide you, but feel free to develop your own workflow that works best for your team!
 
-### Step 6: Simplify main.py
-
-**Follow Lecture 4, Section 6.4 (end)**
-
-1. The monolithic `main.py` already exists in `src/road_profile_viewer/`
-2. Replace it with a simplified version (~20 lines):
-
-```python
-"""
-Road Profile Viewer - Interactive 2D Visualization
-===================================================
-Main entry point for the road profile viewer application.
-
-This application visualizes a road profile with camera ray intersection
-using an interactive Dash interface.
-"""
-
-from road_profile_viewer.visualization import create_dash_app
-
-
-def main():
-    """
-    Main function to run the Dash application.
-    """
-    app = create_dash_app()
-    print("Starting Road Profile Viewer...")
-    print("Open your browser and navigate to: http://127.0.0.1:8050/")
-    print("Press Ctrl+C to stop the server.")
-    app.run(debug=True)
-
-
-if __name__ == "__main__":
-    main()
-```
-
-**⚠️ IMPORTANT:** Use **absolute imports** (`from road_profile_viewer.visualization`) instead of relative imports (`from .visualization`). This allows the module to be run directly with `python -m road_profile_viewer.main` or `uv run main.py` without import errors.
-
-**Commit your progress:**
+### Step 1: Accept Assignment & Form Team
 
 ```bash
-git add src/road_profile_viewer/main.py
-git commit -m "Simplify main.py to entry point only
+# Each team member accepts the GitHub Classroom assignment
+# First member creates a new team
+# Other members join the existing team
 
-- Only imports from visualization module using absolute imports
-- Acts as entry point (~20 lines)
-- Completes refactoring to modular structure"
+# Clone the team repository
+git clone https://github.com/hs-aalen-software-engineering/road-profile-db-TEAM-NAME.git
+cd road-profile-db-TEAM-NAME
 ```
 
-### Step 7: Run Local Checks
-
-**Test everything works before pushing!**
+### Step 2: Understand Current Application
 
 ```bash
 # Install dependencies
 uv sync
 
-# Test that the application runs without import errors
-uv run python -m road_profile_viewer.main
+# Run the current app to see what it does
+uv run python -m road_profile_viewer
 
-# Stop the server with Ctrl+C, then run quality checks
+# Open browser: http://127.0.0.1:8050/
+# Play with the angle input to see ray intersection
+```
+
+**Explore the code:**
+- `src/road_profile_viewer/main.py` - Entry point
+- `src/road_profile_viewer/visualization.py` - Dash UI
+- `src/road_profile_viewer/geometry.py` - Intersection calculations
+- `src/road_profile_viewer/road.py` - Current profile generation
+
+### Step 3: Plan Your Implementation
+
+**Hold a team meeting to decide:**
+
+1. Which technical approach? (FastAPI or TinyDB)
+2. How to split the work? (who does what)
+3. What will your branch strategy be?
+4. How will you achieve 90% test coverage?
+
+**Fill in the provided template:** `docs/implementation-plan.md`
+
+The template is already in your repository - customize it for your team's needs.
+
+### Step 4: Set Up Development Environment
+
+**Create starter files:**
+
+```bash
+# 1. Pydantic models
+# src/road_profile_viewer/models.py contains a STARTER SUGGESTION
+# You're completely free to design your own models!
+# Remember: Move this file to match your chosen architecture
+# (Keep it at root level OR move to database/ or api/ folder)
+
+# 2. Review example JSON format
+cat docs/example-road-profile.json
+```
+
+**Example JSON format** (`docs/example-road-profile.json`):
+```json
+{
+  "name": "mountain_road",
+  "x_coordinates": [0.0, 10.0, 20.0, 30.0, 40.0, 50.0],
+  "y_coordinates": [0.0, 2.0, 5.0, 8.0, 6.0, 4.0]
+}
+```
+
+### Step 5: Develop Features
+
+**Split the work among team members.** Create feature branches for each major component. Here are some suggested work packages, but feel free to organize differently:
+
+- Database setup and schema
+- Dropdown selector integration
+- Upload page with validation
+- API endpoints (if using FastAPI)
+- Testing and coverage
+
+**Example workflow for one feature:**
+
+```bash
+# Create your feature branch
+git checkout -b feature/your-feature-name
+
+# Implement your feature
+# Write tests as you go
+# Commit incrementally with meaningful messages
+
+# Push and create PR using the template
+git push -u origin feature/your-feature-name
+gh pr create
+```
+
+**Remember:** Each feature should have tests, follow code quality standards, and go through code review before merging.
+
+### Step 6: Code Review Process
+
+**For each PR:**
+
+1. **Author**: Ensure CI checks pass before requesting review
+2. **Reviewer**: Check the PR using the template checklist
+3. **Reviewer**: Test locally:
+   ```bash
+   git fetch origin
+   git checkout feature/database-setup
+   uv sync
+   uv run pytest --cov=src --cov-report=term-missing
+   uv run python -m road_profile_viewer
+   ```
+4. **Reviewer**: Leave comments, request changes, or approve
+5. **Author**: Address feedback, push updates
+6. **Merge**: Only after approval + all CI checks pass
+
+### Step 7: Integration & Testing
+
+```bash
+# After all features merged, verify end-to-end:
+
+# 1. Fresh install
+uv sync
+
+# 2. Check coverage on all new code
+uv run pytest --cov=src --cov-report=html --cov-report=term
+# Open htmlcov/index.html to see detailed coverage
+
+# 3. Manual testing checklist:
+# - [ ] App starts without errors
+# - [ ] Dropdown shows default profile
+# - [ ] Can select different profiles from dropdown
+# - [ ] Upload page accessible
+# - [ ] Can upload valid JSON file
+# - [ ] Preview graph appears correctly
+# - [ ] Can rename profile before saving
+# - [ ] Profile appears in dropdown after upload
+# - [ ] Invalid JSON shows error message
+# - [ ] Database persists after app restart
+
+# 4. Code quality checks
 uv run ruff check .
 uv run ruff format --check .
 uv run pyright
-
-# If you see errors, fix them and commit the fixes
 ```
 
-### Step 8: Push and Create Pull Request
-
-```bash
-# Push your feature branch
-git push -u origin feature/refactor-to-modules
-
-# Create PR using GitHub CLI (recommended)
-gh pr create --title "Refactor: Split monolith into focused modules" \
-  --body "Refactored src/road_profile_viewer/main.py into modular structure:
-
-- geometry.py: Ray intersection math
-- road.py: Road generation
-- visualization.py: Dash UI
-- main.py: Entry point (~20 lines)
-
-All code quality checks pass.
-Ready for review!"
-
-# Or create PR manually on GitHub web interface
-```
-
-### Step 8.1: Enable Branch Protection (IMPORTANT!)
-
-**⚠️ Before proceeding, protect your main branch to prevent accidental merges:**
-
-1. Go to your repository on GitHub
-2. Click **Settings** → **Branches** (in the left sidebar)
-3. Under "Branch protection rules", click **Add rule**
-4. Configure the rule:
-   - **Branch name pattern**: `main`
-   - ✅ **Require a pull request before merging**
-   - ✅ **Require status checks to pass before merging**
-   - In the search box, add these required checks:
-     - `check-all-workflows` (Merge Ready Check)
-     - `check-structure` (Structure Check)
-     - `check-workflow` (Git Workflow Check)
-     - `quality` (Code Quality Check)
-     - `smoke-tests` (Smoke Tests)
-     - `check-review` (Review Check)
-   - ✅ **Require branches to be up to date before merging**
-5. Click **Create** (scroll down)
-
-**Why this matters:** Branch protection ensures you **cannot merge** until all automated checks pass. This prevents broken code from entering your main branch!
-
-### Step 9: Wait for CI Checks
-
-**GitHub Actions will automatically run:**
-
-- ✅ Structure Check (verifies files exist, imports correct, etc.)
-- ✅ Git Workflow Check (verifies feature branch, incremental commits)
-- ✅ Code Quality Check (Ruff, Pyright)
-- ✅ Smoke Tests (verifies basic functionality works)
-- ✅ Review Check (verifies peer review process)
-- ✅ Merge Ready Check (waits for all other checks to pass)
-
-**Check the "Actions" tab on GitHub to see results.**
-
-**⚠️ IMPORTANT - DO NOT MERGE UNTIL ALL CHECKS PASS!**
-
-The **Merge Ready Check** will monitor all other workflows and only turn green when:
-- All structure checks pass
-- All code quality checks pass
-- All smoke tests pass
-- Git workflow is correct
-- You have received peer approval
-
-**If you enabled branch protection (Step 8.1), GitHub will automatically prevent merging until all required checks pass.** This is a safety mechanism to ensure code quality!
-
-If any checks fail, read the error messages, fix the issues, commit, and push again.
-
-### Step 10: Get Peer Review
-
-**Share your PR link with a classmate:**
-
-```
-Hey! Can you review my refactoring PR?
-https://github.com/hs-aalen-software-engineering/refactoring-YOUR-USERNAME/pull/1
-```
-
-**As a reviewer, check:**
-
-- [ ] PR is from `feature/refactor-to-modules` branch
-- [ ] At least 3 incremental commits exist
-- [ ] All 4 files exist (`geometry.py`, `road.py`, `visualization.py`, `main.py`)
-- [ ] `main.py` is simplified (< 30 lines)
-- [ ] Functions are in correct modules
-- [ ] Imports flow correctly (no circular dependencies)
-- [ ] All CI checks pass (green checkmarks)
-
-**How to approve:**
-
-1. Go to the PR
-2. Click "Files changed" tab
-3. Review the code
-4. Click "Review changes" → "Approve" → "Submit review"
-
-### Step 11: Merge Your PR
-
-**Once you have:**
-- ✅ All CI checks passing (especially **Merge Ready Check** shows ✅)
-- ✅ Peer review approval
-- ✅ No conflicts with main branch
-
-**Verify the Merge Ready Check:**
-
-The **Merge Ready Check** workflow will show you the status of all required workflows:
-- If it shows "✅ READY TO MERGE!" - you're good to go!
-- If it shows "⏳ NOT READY - Workflows Running" - wait for all checks to complete
-- If it shows "❌ NOT READY TO MERGE" - fix failing checks first
-
-**Merge your PR:**
-
-```bash
-# Using GitHub CLI
-gh pr merge --squash
-
-# Or click "Merge pull request" on GitHub web interface
-```
-
-**Note:** If you enabled branch protection, GitHub will only allow merging when all required checks pass. The "Merge pull request" button will be disabled until then.
-
-**Congratulations! You've completed the refactoring exercise! 🎉**
-
-## 🔍 How You're Graded
-
-### Automated Checks (85 points)
-
-GitHub Actions automatically verify:
-
-| Check | Points | What's Verified |
-|-------|--------|-----------------|
-| **Structure Check** | 35 | All files exist, functions in correct modules, imports correct |
-| **Git Workflow** | 25 | Feature branch, 3+ commits, descriptive messages |
-| **Code Quality** | 25 | Ruff, Pyright pass; no circular dependencies |
-
-### Manual Check (15 points)
-
-Instructor verifies:
-
-- You received peer review approval
-- The review was substantive (not just "LGTM")
-
-## ❓ Troubleshooting
-
-### "ImportError: attempted relative import with no known parent package"
-
-This is the most common error! It occurs when using relative imports (`.module`) in files that are run directly as scripts.
-
-**Problem:**
-```python
-# ❌ This fails when running main.py directly:
-from .visualization import create_dash_app
-from .geometry import find_intersection
-```
-
-**Solution:**
-```python
-# ✅ Use absolute imports instead:
-from road_profile_viewer.visualization import create_dash_app
-from road_profile_viewer.geometry import find_intersection
-```
-
-**Why?** Python only recognizes relative imports when a file is imported as part of a package. When you run a file directly (`python main.py` or `uv run main.py`), Python doesn't know it's part of a package.
-
-**Apply this fix to:**
-- `src/road_profile_viewer/main.py`: Import from `visualization` module
-- `src/road_profile_viewer/visualization.py`: Import from `geometry` and `road` modules
-
-**Verification:**
-```bash
-# This should work without errors:
-uv run python -m road_profile_viewer.main
-# You should see: "Starting Road Profile Viewer..."
-```
-
-### "Import errors when running locally"
-
-Make sure you create all modules in the **src/road_profile_viewer/ directory**. This is the proper Python package structure!
-
-```
-✅ Correct structure:
-road-profile-viewer-YOUR-USERNAME/
-├── README.md
-├── pyproject.toml
-├── tests/
-│   └── test_smoke.py
-└── src/
-    └── road_profile_viewer/       ← All modules go HERE
-        ├── __init__.py
-        ├── geometry.py            ← CREATE THIS
-        ├── road.py                ← CREATE THIS
-        ├── visualization.py       ← CREATE THIS
-        └── main.py                ← SIMPLIFY THIS (originally 390 lines → ~20 lines)
-
-❌ Wrong structure:
-road-profile-viewer-YOUR-USERNAME/
-├── geometry.py                    ← WRONG! Not in src/
-├── road.py                        ← WRONG! Not in src/
-└── src/
-    └── road_profile_viewer/
-        └── main.py
-```
-
-### "Ruff errors"
-
-If you get Ruff errors, fix them! The monolithic `main.py` already follows PEP 8, but when you extract code you might introduce issues:
-
-```python
-# ❌ Common mistakes when extracting:
-def generate_road_profile(num_points=100,x_max=80):  # Missing space after comma
-    y=0.015 * x_norm**3 * x_max                      # Missing spaces around =
-    return x,y                                        # Missing space after comma
-
-# ✅ Correct:
-def generate_road_profile(num_points=100, x_max=80):
-    y = 0.015 * x_norm**3 * x_max
-    return x, y
-```
-
-**Auto-fix most issues:**
-```bash
-uv run ruff check --fix .
-uv run ruff format .
-```
-
-### "Structure check fails: main.py too long"
-
-Your `main.py` should be **~20 lines**, not 390! You should create a **new** `main.py` with just the entry point, not copy the entire original file.
-
-The simplified `main.py` should only:
-1. Import from `visualization` module
-2. Define `main()` function
-3. Have `if __name__ == "__main__":` block
-
-Everything else goes to other modules!
-
-### "Circular dependency detected"
-
-Make sure dependencies flow in one direction:
-
-```
-✅ Correct:
-main.py → visualization.py → geometry.py, road.py
-
-❌ Wrong:
-geometry.py → visualization.py → geometry.py (CIRCULAR!)
-```
-
-**Rule:** Lower-level modules (`geometry.py`, `road.py`) should NOT import from higher-level modules (`visualization.py`, `main.py`).
-
-### "No peer review approval"
-
-Ask a classmate! Share your PR link in the course chat or during class.
-
-If you need help finding a reviewer, contact the instructor.
-
-### "CI checks not running"
-
-Make sure:
-1. You created a PR (not just pushed to main)
-2. The PR is from your feature branch to `main`
-3. Check the "Actions" tab for errors
-
-## 📚 Reference
-
-- **Lecture 4**: Full refactoring tutorial
-- **Lecture 3 Part 1**: Feature branch workflow
-- **Lecture 3 Part 2**: CI/CD automation
-- **Lecture 2**: Code quality (PEP 8, Ruff)
-
-## 🆘 Getting Help
-
-1. **Re-read Lecture 4** - It has step-by-step instructions!
-2. **Check CI error messages** - They tell you exactly what's wrong
-3. **Ask in class chat** - Help each other!
-4. **Office hours** - Instructor is available for questions
-
-## 📝 Quick Reference: Complete Import Structure
-
-Here's what your imports should look like in each file:
-
-**geometry.py:**
-```python
-import numpy as np
-# No imports from other project modules
-```
-
-**road.py:**
-```python
-import numpy as np
-# No imports from other project modules
-```
-
-**visualization.py:**
-```python
-import numpy as np
-import plotly.graph_objects as go
-from dash import Dash, Input, Output, dcc, html
-
-from road_profile_viewer.geometry import find_intersection
-from road_profile_viewer.road import generate_road_profile
-```
-
-**main.py:**
-```python
-from road_profile_viewer.visualization import create_dash_app
-```
-
-Good luck! 🚀
+## 🔍 Grading Rubric
+
+| Category | Points | Criteria |
+|----------|--------|----------|
+| **Implementation** | 1.5 | Dropdown (0.6) + Upload page with preview/rename (0.9) |
+| **Backend/Database** | 1.0 | Schema (0.3) + CRUD operations (0.4) + Seed script (0.3) |
+| **Testing** | 0.5 | 90%+ C1 coverage on new features |
+| **Git Workflow** | 0.5 | ≥2 branches, clear commits, implementation plan |
+| **Code Review** | 0.5 | PRs with template, peer reviews, CI passes |
+| **BONUS: FastAPI** | +1.0 | REST API + proper error handling + separation of concerns |
+| **Total (TinyDB)** | **4.0** | Maximum achievable with TinyDB approach |
+| **Total (FastAPI)** | **5.0** | Capped at 5.0 (bonus allows error margin up to 6.0) |
+
+### Automated Checks
+
+GitHub Actions will automatically verify:
+
+- ✅ **Code Quality**: Ruff linting, Pyright type checking
+- ✅ **Test Coverage**: pytest-cov with 90% threshold on new code
+- ✅ **Git Workflow**: ≥2 feature branches, multiple authors, commit quality
+- ✅ **PR Reviews**: All PRs approved before merge
+- ✅ **Structure**: Required files exist (database/, models.py, etc.)
+
+> **⚠️ Important Note on Automated Checks:**
+>
+> The GitHub Actions workflows are **for orientation only** and provide helpful feedback during development. However:
+>
+> - **Final grading is done exclusively by the instructor**, not by automated checks
+> - The checks are intentionally open-ended and may not cover all valid solution approaches
+> - **Don't get stuck** if a check fails but you have a valid alternative solution - document your approach in your implementation plan
+> - If automated checks don't match your design decisions, that's okay! The instructor will evaluate based on correctness, not check compliance
+> - Focus on building a working, well-tested application rather than satisfying every automated rule
+
+### Manual Evaluation
+
+Instructor will:
+- Clone your repository
+- Run `uv sync` and `uv run python -m road_profile_viewer`
+- Test all features (dropdown, upload, preview, persistence)
+- Review implementation plan quality
+- Check code architecture decisions
+- Verify testing strategy
+
+## 📄 Required Files Checklist
+
+**Documentation:**
+- [ ] `docs/implementation-plan.md` - Your team's plan
+- [ ] `docs/example-road-profile.json` - Provided example (included)
+- [ ] `docs/llm-prompts/` - LLM prompts (if used)
+
+**Code (varies by approach):**
+
+**Both approaches:**
+- [ ] `src/road_profile_viewer/models.py` - Pydantic validation models
+- [ ] Updated `src/road_profile_viewer/visualization.py` - Dropdown + upload page
+
+**FastAPI approach:**
+- [ ] `src/road_profile_viewer/api/main.py` - FastAPI app
+- [ ] `src/road_profile_viewer/api/routes.py` - API endpoints
+- [ ] `src/road_profile_viewer/database/models.py` - SQLModel models
+- [ ] `src/road_profile_viewer/database/connection.py` - DB setup
+
+**TinyDB approach:**
+- [ ] `src/road_profile_viewer/database/db.py` - TinyDB operations
+
+**Tests:**
+- [ ] `tests/test_models.py` - Pydantic validation tests
+- [ ] `tests/test_database.py` - Database operation tests
+- [ ] `tests/test_upload.py` - Upload functionality tests
+- [ ] `tests/test_api.py` - API endpoint tests (FastAPI only)
+
+## 📚 Technical Resources
+
+### FastAPI + SQLModel Approach
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [SQLModel Documentation](https://sqlmodel.tiangolo.com/)
+- [Pydantic Validation](https://docs.pydantic.dev/latest/)
+
+### TinyDB Approach
+- [TinyDB Documentation](https://tinydb.readthedocs.io/)
+- [TinyDB Tutorial](https://tinydb.readthedocs.io/en/latest/getting-started.html)
+
+### Dash Multi-Page Apps
+- [Dash Pages](https://dash.plotly.com/urls)
+- [Dash Upload Component](https://dash.plotly.com/dash-core-components/upload)
+
+### Testing
+- [pytest Documentation](https://docs.pytest.org/)
+- [pytest-cov Coverage](https://pytest-cov.readthedocs.io/)
+
+## 🎉 Success Criteria
+
+Your assignment is complete when:
+
+- ✅ All features work as demonstrated in person
+- ✅ All automated CI checks pass
+- ✅ Test coverage ≥90% on new code
+- ✅ All PRs reviewed and merged
+- ✅ Implementation plan documents your decisions
+- ✅ Code quality meets standards (Ruff, Pyright)
+
+**Congratulations on building a full-stack database application!**
 
 ---
 
-**Assignment Created**: 2025-10-29
+**Assignment Created**: 2025-11-19
 **Course**: Software Engineering - HS Aalen
 **Instructor**: Dominik Mueller
-**Last Updated**: 2025-10-29 (Fixed import structure)

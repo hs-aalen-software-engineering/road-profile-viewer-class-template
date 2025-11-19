@@ -30,42 +30,121 @@ jobs:
         run: |
           echo "🔍 Checking PR branch name..."
 
-          score=0
-          max_score=2
-          feedback="### 🌿 Feature Branch (0/$max_score points)\n\n"
-
+          feedback="### 🌿 Feature Branch\n\n"
           branch_name="${{ github.head_ref }}"
 
           if [[ "$branch_name" =~ ^feature/ ]]; then
             echo "✅ PR is from feature branch: $branch_name"
-            feedback+="✅ PR is from feature branch: **$branch_name** (+2 points)\n"
-            score=2
+            feedback+="✅ **Status:** PASSED - PR is from feature branch: **$branch_name**\n"
+            passed=true
           else
             echo "❌ PR must be from a feature/* branch"
             echo "   Current branch: $branch_name"
-            feedback+="❌ PR is from branch: **$branch_name** (should be feature/*) (0 points)\n"
+            feedback+="❌ **Status:** FAILED - PR is from branch: **$branch_name** (should be feature/*)\n"
+            passed=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Create branch with: \`git checkout -b feature/refactor-to-modules\`" >> /tmp/git_feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Create branch with: \`git checkout -b feature/your-feature-name\`" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
 
-      - name: Check multiple commits (incremental refactoring)
+      - name: Check for multiple feature branches (group work)
+        id: multiple_branches
+        run: |
+          echo "🔍 Checking for multiple feature branches..."
+
+          feedback="### 🌳 Multiple Feature Branches - Group Work\n\n"
+
+          # Get all feature branches (both local and remote)
+          git fetch origin --prune > /dev/null 2>&1 || true
+          feature_branches=$(git branch -a | grep -E '(remotes/origin/feature/|^\s*feature/)' | sed 's/.*origin\///' | sed 's/^\s*//' | sort -u | grep -v HEAD || echo "")
+          branch_count=$(echo "$feature_branches" | grep -v "^$" | wc -l)
+
+          echo "Found $branch_count feature branches"
+
+          if [ $branch_count -ge 2 ]; then
+            echo "✅ Found $branch_count feature branches (requirement: ≥2)"
+            feedback+="✅ **Status:** PASSED - Found $branch_count feature branches (requirement: ≥2)\n\n"
+            feedback+="Branches:\n"
+            echo "$feature_branches" | while read branch; do
+              [ -n "$branch" ] && feedback+="- \`$branch\`\n"
+            done
+            passed=true
+          elif [ $branch_count -eq 1 ]; then
+            echo "❌ Only 1 feature branch found - need at least 2"
+            feedback+="❌ **Status:** FAILED - Only 1 feature branch found\n"
+            feedback+="**Requirement:** At least 2 feature branches for group work\n"
+            passed=false
+          else
+            echo "❌ No feature branches found"
+            feedback+="❌ **Status:** FAILED - No feature branches found\n"
+            passed=false
+          fi
+
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "passed=$passed" >> $GITHUB_OUTPUT
+
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Create at least 2 feature branches for different features (e.g., \`feature/database-setup\`, \`feature/upload-page\`)" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
+
+      - name: Check for multiple contributors (group work)
+        id: multiple_authors
+        run: |
+          echo "🔍 Checking for multiple contributors..."
+
+          feedback="### 👥 Multiple Contributors - Group Work\n\n"
+
+          # Get all unique authors from all branches
+          authors=$(git log --all --format='%an <%ae>' | sort -u)
+          author_count=$(echo "$authors" | grep -v "^$" | wc -l)
+
+          echo "Found $author_count unique authors"
+
+          if [ $author_count -ge 2 ]; then
+            echo "✅ Found $author_count contributors (requirement: ≥2)"
+            feedback+="✅ **Status:** PASSED - Found $author_count unique contributors (requirement: ≥2)\n\n"
+            feedback+="Contributors:\n"
+            echo "$authors" | while read author; do
+              [ -n "$author" ] && feedback+="- $author\n"
+            done
+            passed=true
+          elif [ $author_count -eq 1 ]; then
+            echo "❌ Only 1 contributor found - this is a group assignment"
+            feedback+="❌ **Status:** FAILED - Only 1 contributor found\n"
+            feedback+="**This is a group assignment** - ensure all team members contribute commits\n"
+            passed=false
+          else
+            echo "❌ No contributors found"
+            feedback+="❌ **Status:** FAILED - No contributors found\n"
+            passed=false
+          fi
+
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "passed=$passed" >> $GITHUB_OUTPUT
+
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Each team member should make commits. Configure git with: \`git config user.name\` and \`git config user.email\`" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
+
+      - name: Check multiple commits (incremental development)
         id: commits
         run: |
           echo "🔍 Checking commit history..."
 
-          score=0
-          max_score=4
-          feedback="### 📝 Commit History (0/$max_score points)\n\n"
+          feedback="### 📝 Commit History\n\n"
 
           # Count commits in this PR
           commit_count=$(git rev-list --count HEAD ^origin/main)
@@ -73,40 +152,27 @@ jobs:
           echo "Found $commit_count commits in this PR"
           feedback+="Found **$commit_count commits** in this PR\n\n"
 
-          if [ "$commit_count" -ge 4 ]; then
-            echo "✅ Great! $commit_count commits shows excellent incremental work"
-            feedback+="✅ Excellent incremental refactoring with $commit_count commits (+4 points)\n"
-            score=4
-          elif [ "$commit_count" -eq 3 ]; then
-            echo "✅ Good! 3 commits shows incremental work"
-            feedback+="✅ Good incremental refactoring with 3 commits (+3 points)\n"
-            score=3
-          elif [ "$commit_count" -eq 2 ]; then
-            echo "⚠️ Only 2 commits - could be more incremental"
-            feedback+="⚠️ Only 2 commits - more granularity would be better (+2 points)\n"
-            score=2
+          if [ "$commit_count" -ge 2 ]; then
+            echo "✅ $commit_count commits shows incremental development (requirement: ≥2)"
+            feedback+="✅ **Status:** PASSED - $commit_count commits shows incremental development (requirement: ≥2)\n"
+            passed=true
           elif [ "$commit_count" -eq 1 ]; then
-            echo "⚠️ Only 1 commit - should break down into steps"
-            feedback+="⚠️ Only 1 commit - should break into incremental steps (+1 point)\n"
-            score=1
+            echo "❌ Only 1 commit - need at least 2 for incremental development"
+            feedback+="❌ **Status:** FAILED - Only 1 commit found\n"
+            passed=false
           else
             echo "❌ No commits found"
-            feedback+="❌ No commits found (0 points)\n"
+            feedback+="❌ **Status:** FAILED - No commits found\n"
+            passed=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt 3 ]; then
-            echo "💡 **Hint:** Make incremental commits:" >> /tmp/git_feedback.md
-            echo "1. Extract geometry.py → commit" >> /tmp/git_feedback.md
-            echo "2. Extract road.py → commit" >> /tmp/git_feedback.md
-            echo "3. Extract visualization.py → commit" >> /tmp/git_feedback.md
-            echo "4. Simplify main.py → commit" >> /tmp/git_feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Break work into logical incremental commits (e.g., setup → implementation → tests)" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
 
@@ -115,9 +181,7 @@ jobs:
         run: |
           echo "🔍 Checking commit message quality..."
 
-          score=0
-          max_score=4
-          feedback="### ✍️ Commit Message Quality (0/$max_score points)\n\n"
+          feedback="### ✍️ Commit Message Quality\n\n"
 
           # Get all commit messages in this PR
           git log --format=%s origin/main..HEAD > /tmp/commit_messages.txt
@@ -144,92 +208,80 @@ jobs:
             fi
           done < /tmp/commit_messages.txt
 
-          # Calculate score
+          # Pass if at least 50% of messages are descriptive (≥20 chars)
           if [ $total_messages -eq 0 ]; then
-            score=0
+            passed=false
           else
-            # Each descriptive message is worth 1 point, max 4 points
-            score=$descriptive_messages
-            if [ $score -gt $max_score ]; then
-              score=$max_score
+            threshold=$((total_messages / 2))
+            if [ $descriptive_messages -ge $threshold ]; then
+              passed=true
+            else
+              passed=false
             fi
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
-          echo -e "\n$feedback" >> /tmp/git_feedback.md
+          if [ "$passed" = "true" ]; then
+            feedback+="\n✅ **Status:** PASSED - $descriptive_messages/$total_messages messages are descriptive (≥50% required)\n"
+          else
+            feedback+="\n❌ **Status:** FAILED - $descriptive_messages/$total_messages messages are descriptive (≥50% required)\n"
+          fi
+
+          echo -e "$feedback" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Write descriptive commit messages (20+ characters) that explain WHAT and WHY" >> /tmp/git_feedback.md
-            echo "- ✅ Good: \"Extract geometry functions to geometry.py\"" >> /tmp/git_feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Write descriptive commit messages (20+ characters) that explain WHAT and WHY" >> /tmp/git_feedback.md
+            echo "- ✅ Good: \"Add database schema with SQLModel for road profiles\"" >> /tmp/git_feedback.md
             echo "- ❌ Bad: \"update\" or \"fix\"" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
 
-      - name: Calculate final score
-        id: final
+      - name: Calculate summary
+        id: summary
         if: always()
         run: |
-          # Sum up all scores
-          total_score=0
-          total_max=0
+          # Count how many checks passed
+          checks_passed=0
+          checks_total=5
 
-          # Feature branch
-          total_score=$((total_score + ${{ steps.feature_branch.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.feature_branch.outputs.max_score || 0 }}))
+          feature_branch_passed="${{ steps.feature_branch.outputs.passed }}"
+          multiple_branches_passed="${{ steps.multiple_branches.outputs.passed }}"
+          multiple_authors_passed="${{ steps.multiple_authors.outputs.passed }}"
+          commits_passed="${{ steps.commits.outputs.passed }}"
+          messages_passed="${{ steps.messages.outputs.passed }}"
 
-          # Commits
-          total_score=$((total_score + ${{ steps.commits.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.commits.outputs.max_score || 0 }}))
+          [ "$feature_branch_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$multiple_branches_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$multiple_authors_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$commits_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$messages_passed" = "true" ] && checks_passed=$((checks_passed + 1))
 
-          # Messages
-          total_score=$((total_score + ${{ steps.messages.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.messages.outputs.max_score || 0 }}))
-
-          percentage=$((total_score * 100 / total_max))
+          percentage=$((checks_passed * 100 / checks_total))
 
           echo "---" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
-          echo "### 🎯 Final Score: $total_score / $total_max points ($percentage%)" >> /tmp/git_feedback.md
+          echo "### 🎯 Summary: $checks_passed / $checks_total checks passed ($percentage%)" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
 
-          if [ $percentage -ge 90 ]; then
-            grade="A"
-            emoji="🌟"
-            comment="Excellent Git workflow!"
-          elif [ $percentage -ge 80 ]; then
-            grade="B"
-            emoji="👍"
-            comment="Good Git workflow!"
-          elif [ $percentage -ge 70 ]; then
-            grade="C"
-            emoji="👌"
-            comment="Acceptable workflow, but room for improvement"
-          elif [ $percentage -ge 60 ]; then
-            grade="D"
-            emoji="⚠️"
-            comment="Git workflow needs improvement"
+          if [ $percentage -eq 100 ]; then
+            echo "✅ **All Git workflow checks passed!** ✅" >> /tmp/git_feedback.md
+            all_passed=true
           else
-            grade="F"
-            emoji="❌"
-            comment="Significant Git workflow issues need to be addressed"
+            echo "⚠️ **Some Git workflow checks failed.** Please fix the issues above." >> /tmp/git_feedback.md
+            all_passed=false
           fi
 
-          echo "**Grade: $grade** $emoji" >> /tmp/git_feedback.md
-          echo "" >> /tmp/git_feedback.md
-          echo "*$comment*" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
           echo "---" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
-          echo "*This automated check validates your Git workflow practices. Keep up the good work! 🚀*" >> /tmp/git_feedback.md
+          echo "*This automated check validates your Git workflow and group collaboration practices.*" >> /tmp/git_feedback.md
 
-          echo "score=$total_score" >> $GITHUB_OUTPUT
-          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "checks_passed=$checks_passed" >> $GITHUB_OUTPUT
+          echo "checks_total=$checks_total" >> $GITHUB_OUTPUT
           echo "percentage=$percentage" >> $GITHUB_OUTPUT
-          echo "grade=$grade" >> $GITHUB_OUTPUT
+          echo "all_passed=$all_passed" >> $GITHUB_OUTPUT
 
       - name: Post PR comment
         if: always()
@@ -278,7 +330,6 @@ jobs:
           echo "🎉 Git Workflow Check Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
-          echo "Grade: ${{ steps.final.outputs.grade }}"
+          echo "Checks: ${{ steps.summary.outputs.checks_passed }} / ${{ steps.summary.outputs.checks_total }} passed (${{ steps.summary.outputs.percentage }}%)"
           echo ""
           cat /tmp/git_feedback.md

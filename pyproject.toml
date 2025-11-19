@@ -70,6 +70,7 @@ exclude = [
     "__pycache__",
     "build",
     "dist",
+    "**/visualization.py",  # Dash decorators cause type checking issues
 ]
 
 # Reporting-Optionen

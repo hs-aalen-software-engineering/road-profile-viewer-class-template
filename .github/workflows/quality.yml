@@ -283,6 +283,26 @@ jobs:
         if: steps.summary.outputs.all_passed != 'true'
         run: |
           echo ""
-          echo "❌ Quality checks must pass before merging!"
-          echo "   Please fix the issues and push again."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "❌ Quality Checks Failed!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Result: ${{ steps.summary.outputs.checks_passed }} / ${{ steps.summary.outputs.checks_total }} checks passed (${{ steps.summary.outputs.percentage }}%)"
+          echo ""
+          echo "Failed checks:"
+
+          ruff_passed="${{ steps.ruff.outputs.passed }}"
+          format_passed="${{ steps.format.outputs.passed }}"
+          pyright_passed="${{ steps.pyright.outputs.passed }}"
+          coverage_passed="${{ steps.coverage.outputs.passed }}"
+
+          [ "$ruff_passed" != "true" ] && echo "  ❌ Ruff linting"
+          [ "$format_passed" != "true" ] && echo "  ❌ Code formatting"
+          [ "$pyright_passed" != "true" ] && echo "  ❌ Type checking (Pyright)"
+          [ "$coverage_passed" != "true" ] && echo "  ❌ Test coverage"
+
+          echo ""
+          echo "💡 Review the 'Summary' step above for detailed error information."
+          echo "   Each failed check includes specific files and line numbers."
+          echo ""
           exit 1

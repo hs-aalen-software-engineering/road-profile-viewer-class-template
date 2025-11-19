@@ -84,7 +84,7 @@ jobs:
             file_count=$(grep -c "Would reformat:" /tmp/format_output.txt || echo "0")
             feedback+="❌ **Status:** FAILED - $file_count files need formatting\n\n"
             feedback+="\`\`\`\n"
-            cat /tmp/format_output.txt >> /tmp/quality_feedback.md
+            feedback+="$(cat /tmp/format_output.txt)\n"
             feedback+="\`\`\`\n\n"
             feedback+="💡 **Fix:** Run \`uv run ruff format .\` to format all files\n"
             format_passed=false

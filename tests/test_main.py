@@ -9,12 +9,7 @@ Test Coverage:
 Equivalence classes and boundary values are documented in each test.
 """
 
-import sys
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 def test_main_creates_and_runs_app() -> None:

@@ -10,12 +10,6 @@ Note: These are NOT unit tests (you'll learn those in Lecture 5).
 These are just "smoke tests" to verify the refactoring didn't break imports.
 """
 
-import sys
-from pathlib import Path
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 
 def test_imports_work():
     """Test that all refactored modules can be imported."""

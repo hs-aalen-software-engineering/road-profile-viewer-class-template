@@ -10,15 +10,9 @@ Test Coverage:
 Equivalence classes and boundary values are documented in each test.
 """
 
-import sys
-from pathlib import Path
-
 import numpy as np
 import plotly.graph_objects as go
 from dash import Dash
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from road_profile_viewer.geometry import find_intersection
 from road_profile_viewer.road import generate_road_profile

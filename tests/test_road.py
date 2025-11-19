@@ -9,14 +9,8 @@ Test Coverage:
 Equivalence classes and boundary values are documented in each test.
 """
 
-import sys
-from pathlib import Path
-
 import numpy as np
 from pytest import approx
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from road_profile_viewer.road import generate_road_profile
 

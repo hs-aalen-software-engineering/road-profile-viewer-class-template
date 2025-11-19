@@ -282,8 +282,11 @@ The template is already in your repository - customize it for your team's needs.
 **Create starter files:**
 
 ```bash
-# 1. Create Pydantic models file
-# src/road_profile_viewer/models.py already has a starter!
+# 1. Pydantic models
+# src/road_profile_viewer/models.py contains a STARTER SUGGESTION
+# You're completely free to design your own models!
+# Remember: Move this file to match your chosen architecture
+# (Keep it at root level OR move to database/ or api/ folder)
 
 # 2. Review example JSON format
 cat docs/example-road-profile.json
@@ -396,6 +399,16 @@ GitHub Actions will automatically verify:
 - ✅ **PR Reviews**: All PRs approved before merge
 - ✅ **Structure**: Required files exist (database/, models.py, etc.)
 
+> **⚠️ Important Note on Automated Checks:**
+>
+> The GitHub Actions workflows are **for orientation only** and provide helpful feedback during development. However:
+>
+> - **Final grading is done exclusively by the instructor**, not by automated checks
+> - The checks are intentionally open-ended and may not cover all valid solution approaches
+> - **Don't get stuck** if a check fails but you have a valid alternative solution - document your approach in your implementation plan
+> - If automated checks don't match your design decisions, that's okay! The instructor will evaluate based on correctness, not check compliance
+> - Focus on building a working, well-tested application rather than satisfying every automated rule
+
 ### Manual Evaluation
 
 Instructor will:
@@ -471,4 +484,3 @@ Your assignment is complete when:
 **Assignment Created**: 2025-11-19
 **Course**: Software Engineering - HS Aalen
 **Instructor**: Dominik Mueller
-**Max Points**: 5.0 (FastAPI approach can earn bonus for margin of error)

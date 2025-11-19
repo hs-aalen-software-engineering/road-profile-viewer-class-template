@@ -2,10 +2,28 @@
 Pydantic Models for Road Profile Data Validation
 ==================================================
 
-This module contains Pydantic models used for validating road profile data,
-especially for JSON file uploads.
+⚠️ IMPORTANT: This is a STARTER SUGGESTION, not a requirement!
+---------------------------------------------------------------
 
-Students: Complete the validation logic and add any additional validators needed.
+You are COMPLETELY FREE to:
+- Design your own Pydantic models from scratch
+- Modify this structure to fit your architecture
+- Use different field names or validation approaches
+- Add or remove validators as needed
+
+REMEMBER TO MOVE THIS FILE:
+---------------------------
+This file must be relocated based on your chosen architecture:
+
+FastAPI approach:
+  src/road_profile_viewer/models.py (for validation)
+  src/road_profile_viewer/database/models.py (for SQLModel)
+
+TinyDB approach:
+  src/road_profile_viewer/models.py (can stay here)
+  OR move to: src/road_profile_viewer/database/models.py
+
+The structure below is ONE possible implementation. Feel free to improve it!
 """
 
 from pydantic import BaseModel, Field, field_validator

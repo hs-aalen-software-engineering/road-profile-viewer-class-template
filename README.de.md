@@ -282,8 +282,11 @@ Das Template ist bereits in Ihrem Repository - passen Sie es an die Bedürfnisse
 **Starter-Dateien erstellen:**
 
 ```bash
-# 1. Pydantic-Modelle-Datei erstellen
-# src/road_profile_viewer/models.py hat bereits einen Starter!
+# 1. Pydantic-Modelle
+# src/road_profile_viewer/models.py enthält einen STARTER-VORSCHLAG
+# Sie sind komplett frei, Ihre eigenen Modelle zu entwerfen!
+# Denken Sie daran: Verschieben Sie diese Datei entsprechend Ihrer gewählten Architektur
+# (Auf Root-Ebene behalten ODER in database/ oder api/ Ordner verschieben)
 
 # 2. Beispiel-JSON-Format überprüfen
 cat docs/example-road-profile.json
@@ -396,6 +399,16 @@ GitHub Actions verifiziert automatisch:
 - ✅ **PR Reviews**: Alle PRs genehmigt vor Merge
 - ✅ **Struktur**: Erforderliche Dateien existieren (database/, models.py, etc.)
 
+> **⚠️ Wichtiger Hinweis zu automatisierten Prüfungen:**
+>
+> Die GitHub Actions Workflows dienen **nur zur Orientierung** und geben hilfreiche Rückmeldungen während der Entwicklung. Jedoch:
+>
+> - **Die finale Bewertung erfolgt ausschließlich durch den Dozenten**, nicht durch automatisierte Checks
+> - Die Checks sind bewusst offen formuliert und decken möglicherweise nicht alle gültigen Lösungsansätze ab
+> - **Blockieren Sie sich nicht**, wenn ein Check fehlschlägt, Sie aber eine gültige alternative Lösung haben - dokumentieren Sie Ihren Ansatz im Implementierungsplan
+> - Wenn automatisierte Checks nicht zu Ihren Designentscheidungen passen, ist das in Ordnung! Der Dozent bewertet auf Basis von Korrektheit, nicht Check-Konformität
+> - Fokussieren Sie sich darauf, eine funktionierende, gut getestete Anwendung zu bauen, anstatt jede automatisierte Regel zu erfüllen
+
 ### Manuelle Bewertung
 
 Dozent wird:
@@ -453,15 +466,6 @@ Dozent wird:
 - [pytest Dokumentation](https://docs.pytest.org/)
 - [pytest-cov Coverage](https://pytest-cov.readthedocs.io/)
 
-## 🆘 Hilfe erhalten
-
-1. **Dokumentation prüfen** - Links oben
-2. **Implementierungsplan überprüfen** - Haben Sie dies bedacht?
-3. **Im Team-Chat fragen** - Mit Teammitgliedern kollaborieren
-4. **CI-Fehlermeldungen prüfen** - Sie sind detailliert!
-5. **Sprechstunde** - Dozent verfügbar für Fragen
-6. **GitHub Discussions** - Öffentlich fragen, anderen helfen
-
 ## 🎉 Erfolgskriterien
 
 Ihre Aufgabe ist abgeschlossen, wenn:
@@ -480,4 +484,3 @@ Ihre Aufgabe ist abgeschlossen, wenn:
 **Aufgabe erstellt**: 2025-11-19
 **Kurs**: Software Engineering - HS Aalen
 **Dozent**: Dominik Mueller
-**Max. Punkte**: 5,0 (FastAPI-Ansatz kann Bonus für Fehlertoleranz verdienen)

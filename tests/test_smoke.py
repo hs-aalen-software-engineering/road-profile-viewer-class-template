@@ -1,18 +1,19 @@
 """
-Smoke Tests: Verify basic refactoring structure
+Smoke Tests: Verify basic application structure
 
 These tests check that:
 1. All modules can be imported without errors
-2. Expected functions exist and are callable
+2. Pydantic models are correctly defined
 3. Basic module structure is correct
 
-Note: These are NOT unit tests (you'll learn those in Lecture 5).
-These are just "smoke tests" to verify the refactoring didn't break imports.
+Note: These are NOT comprehensive unit tests.
+These are just "smoke tests" to verify basic structure and imports.
+Your comprehensive unit tests should be in separate test files.
 """
 
 
 def test_imports_work():
-    """Test that all refactored modules can be imported."""
+    """Test that all core modules can be imported."""
     try:
         from road_profile_viewer import geometry, main, road, visualization
     except ImportError as e:
@@ -24,7 +25,31 @@ def test_imports_work():
     assert visualization is not None
     assert main is not None
 
-    print("✅ All modules import successfully!")
+    print("✅ All core modules import successfully!")
+
+
+def test_models_exist():
+    """Test that Pydantic models module exists and can be imported."""
+    try:
+        from road_profile_viewer import models
+    except ImportError as e:
+        raise AssertionError(f"models.py import failed: {e}") from e
+
+    assert models is not None
+    print("✅ models.py exists and imports successfully!")
+
+
+def test_pydantic_model_exists():
+    """Test that RoadProfile Pydantic model is defined."""
+    try:
+        from road_profile_viewer.models import RoadProfile
+    except ImportError as e:
+        raise AssertionError(f"RoadProfile model import failed: {e}") from e
+
+    # Verify it's a Pydantic model
+    assert hasattr(RoadProfile, "model_validate"), "RoadProfile should be a Pydantic model"
+
+    print("✅ RoadProfile Pydantic model exists!")
 
 
 def test_geometry_functions_exist():
@@ -35,24 +60,6 @@ def test_geometry_functions_exist():
     assert callable(find_intersection), "find_intersection should be callable"
 
     print("✅ geometry.py exports correct functions!")
-
-
-def test_road_functions_exist():
-    """Test that road module has expected functions."""
-    from road_profile_viewer.road import generate_road_profile
-
-    assert callable(generate_road_profile), "generate_road_profile should be callable"
-
-    print("✅ road.py exports correct functions!")
-
-
-def test_visualization_functions_exist():
-    """Test that visualization module has expected functions."""
-    from road_profile_viewer.visualization import create_dash_app
-
-    assert callable(create_dash_app), "create_dash_app should be callable"
-
-    print("✅ visualization.py exports correct functions!")
 
 
 def test_main_function_exists():
@@ -70,11 +77,11 @@ if __name__ == "__main__":
     print()
 
     test_imports_work()
+    test_models_exist()
+    test_pydantic_model_exists()
     test_geometry_functions_exist()
-    test_road_functions_exist()
-    test_visualization_functions_exist()
     test_main_function_exists()
 
     print()
     print("🎉 All smoke tests passed!")
-    print("Your refactoring structure is correct!")
+    print("Your basic application structure is correct!")

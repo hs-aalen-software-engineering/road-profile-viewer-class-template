@@ -119,9 +119,9 @@ jobs:
 
           # Expected tests
           has_import_test=false
+          has_models_test=false
+          has_pydantic_test=false
           has_geometry_test=false
-          has_road_test=false
-          has_viz_test=false
           has_main_test=false
 
           # Check which tests passed
@@ -133,28 +133,28 @@ jobs:
             feedback+="❌ Import test failed (0 points)\n"
           fi
 
+          if grep -q "test_models_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Models module test passed (+1 point)\n"
+            score=$((score + 1))
+            has_models_test=true
+          else
+            feedback+="❌ Models module test failed (0 points)\n"
+          fi
+
+          if grep -q "test_pydantic_model_exists PASSED" /tmp/test_output.txt 2>/dev/null; then
+            feedback+="✅ Pydantic RoadProfile model test passed (+1 point)\n"
+            score=$((score + 1))
+            has_pydantic_test=true
+          else
+            feedback+="❌ Pydantic RoadProfile model test failed (0 points)\n"
+          fi
+
           if grep -q "test_geometry_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
             feedback+="✅ Geometry module test passed (+1 point)\n"
             score=$((score + 1))
             has_geometry_test=true
           else
             feedback+="❌ Geometry module test failed (0 points)\n"
-          fi
-
-          if grep -q "test_road_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
-            feedback+="✅ Road module test passed (+1 point)\n"
-            score=$((score + 1))
-            has_road_test=true
-          else
-            feedback+="❌ Road module test failed (0 points)\n"
-          fi
-
-          if grep -q "test_visualization_functions_exist PASSED" /tmp/test_output.txt 2>/dev/null; then
-            feedback+="✅ Visualization module test passed (+1 point)\n"
-            score=$((score + 1))
-            has_viz_test=true
-          else
-            feedback+="❌ Visualization module test failed (0 points)\n"
           fi
 
           if grep -q "test_main_function_exists PASSED" /tmp/test_output.txt 2>/dev/null; then
@@ -228,10 +228,11 @@ jobs:
           if [ "$test_passed" = "true" ]; then
             echo "---" >> /tmp/smoke_feedback.md
             echo "" >> /tmp/smoke_feedback.md
-            echo "✅ **All smoke tests passed!** Your refactoring works correctly." >> /tmp/smoke_feedback.md
+            echo "✅ **All smoke tests passed!** Your basic structure is correct." >> /tmp/smoke_feedback.md
             echo "" >> /tmp/smoke_feedback.md
             echo "These tests verify that:" >> /tmp/smoke_feedback.md
             echo "- All modules can be imported without errors" >> /tmp/smoke_feedback.md
+            echo "- Pydantic models are correctly defined" >> /tmp/smoke_feedback.md
             echo "- Expected functions exist and are callable" >> /tmp/smoke_feedback.md
             echo "- Basic module structure is correct" >> /tmp/smoke_feedback.md
             all_passed=true
@@ -254,7 +255,7 @@ jobs:
           echo "" >> /tmp/smoke_feedback.md
           echo "---" >> /tmp/smoke_feedback.md
           echo "" >> /tmp/smoke_feedback.md
-          echo "*Smoke tests verify your refactoring didn't break basic functionality. 🧪*" >> /tmp/smoke_feedback.md
+          echo "*Smoke tests verify your basic application structure. 🧪*" >> /tmp/smoke_feedback.md
 
           echo "score=$total_score" >> $GITHUB_OUTPUT
           echo "max_score=$total_max" >> $GITHUB_OUTPUT

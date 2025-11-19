@@ -9,15 +9,18 @@ Welcome to the Road Profile Database & Upload System exercise! This is a **group
 
 ## 📚 Learning Objectives
 
+This exercise introduces you to **professional feature development workflows** using modern software engineering practices. You'll experience your first end-to-end development cycle - a pedagogical preview of Agile/Scrum methodologies covered in later lectures.
+
 By completing this exercise, you will:
 
-1. **Integrate databases** with web applications (SQLite with FastAPI/SQLModel OR TinyDB)
-2. **Design and implement REST APIs** (if using FastAPI approach)
-3. **Build multi-page Dash applications** with file upload and data validation
-4. **Apply Pydantic validation** for data integrity
-5. **Practice collaborative development** with feature branches and code reviews
-6. **Achieve high test coverage** (90%+ on new features)
-7. **Document implementation decisions** and technical planning
+1. **Experience professional feature development** with proper planning, implementation, testing, and review cycles
+2. **Integrate databases** with web applications (SQLite with FastAPI/SQLModel OR TinyDB)
+3. **Design and implement REST APIs** (if using FastAPI approach)
+4. **Build multi-page Dash applications** with file upload and data validation
+5. **Apply Pydantic validation** for data integrity
+6. **Practice collaborative development** with feature branches and code reviews
+7. **Achieve high test coverage** (90%+ on new features) with quality-driven development
+8. **Document implementation decisions** and technical planning
 
 ## 🎯 Assignment Overview
 
@@ -228,6 +231,8 @@ src/road_profile_viewer/
 
 ## 🚀 Getting Started
 
+> **Important:** You are **completely independent** in how you approach this assignment. The steps below are **suggestions** to guide you, but feel free to develop your own workflow that works best for your team!
+
 ### Step 1: Accept Assignment & Form Team
 
 ```bash
@@ -259,26 +264,18 @@ uv run python -m road_profile_viewer
 - `src/road_profile_viewer/geometry.py` - Intersection calculations
 - `src/road_profile_viewer/road.py` - Current profile generation
 
-### Step 3: Create Implementation Plan
+### Step 3: Plan Your Implementation
 
-**Team meeting to decide:**
-1. Which approach? (FastAPI or TinyDB)
-2. Who does what? (assign features to members)
-3. What are the branch names?
-4. How to achieve 90% test coverage?
+**Hold a team meeting to decide:**
 
-**Document in** `docs/implementation-plan.md`
+1. Which technical approach? (FastAPI or TinyDB)
+2. How to split the work? (who does what)
+3. What will your branch strategy be?
+4. How will you achieve 90% test coverage?
 
-```bash
-# Create docs folder if it doesn't exist
-mkdir docs
+**Fill in the provided template:** `docs/implementation-plan.md`
 
-# Create your implementation plan (use provided template)
-# Commit the plan
-git add docs/implementation-plan.md
-git commit -m "Add implementation plan for database and upload features"
-git push origin main
-```
+The template is already in your repository - customize it for your team's needs.
 
 ### Step 4: Set Up Development Environment
 
@@ -301,85 +298,32 @@ cat docs/example-road-profile.json
 }
 ```
 
-### Step 5: Implement Features (Team Collaboration)
+### Step 5: Develop Features
 
-**Member 1: Database Setup**
+**Split the work among team members.** Create feature branches for each major component. Here are some suggested work packages, but feel free to organize differently:
 
-```bash
-# Create feature branch
-git checkout -b feature/database-setup
+- Database setup and schema
+- Dropdown selector integration
+- Upload page with validation
+- API endpoints (if using FastAPI)
+- Testing and coverage
 
-# Create database module structure
-# For FastAPI approach:
-mkdir -p src/road_profile_viewer/database
-touch src/road_profile_viewer/database/__init__.py
-touch src/road_profile_viewer/database/models.py
-touch src/road_profile_viewer/database/connection.py
-
-# For TinyDB approach:
-mkdir -p src/road_profile_viewer/database
-touch src/road_profile_viewer/database/__init__.py
-touch src/road_profile_viewer/database/db.py
-
-# Implement database models and operations
-# Add seed script to insert default profile
-
-# Commit incrementally
-git add .
-git commit -m "Add database models and connection setup"
-
-# Write tests
-git add tests/test_database.py
-git commit -m "Add database operation tests (90% coverage)"
-
-# Push and create PR
-git push -u origin feature/database-setup
-gh pr create --title "Add database setup with seed script" \
-  --body "[Use provided PR template]"
-```
-
-**Member 2: Dropdown Selector**
+**Example workflow for one feature:**
 
 ```bash
-git checkout -b feature/dropdown-selector
+# Create your feature branch
+git checkout -b feature/your-feature-name
 
-# Update visualization.py to:
-# 1. Add dropdown component
-# 2. Fetch profiles from database
-# 3. Update callback to handle profile selection
-# 4. Load selected profile data
+# Implement your feature
+# Write tests as you go
+# Commit incrementally with meaningful messages
 
-# Commit and test
-# Push and create PR
+# Push and create PR using the template
+git push -u origin feature/your-feature-name
+gh pr create
 ```
 
-**Member 3: Upload Page**
-
-```bash
-git checkout -b feature/upload-page
-
-# Create new page in Dash app:
-# 1. Add dcc.Upload component
-# 2. Add preview graph
-# 3. Add rename text input
-# 4. Add confirm button
-# 5. Add navigation
-
-# Commit, test, PR
-```
-
-**Member 4 (if 4-person team): API Layer** (FastAPI only)
-
-```bash
-git checkout -b feature/api-endpoints
-
-# Create FastAPI app:
-mkdir -p src/road_profile_viewer/api
-# Implement REST endpoints
-# Add API tests
-
-# Commit, test, PR
-```
+**Remember:** Each feature should have tests, follow code quality standards, and go through code review before merging.
 
 ### Step 6: Code Review Process
 
@@ -490,83 +434,6 @@ Instructor will:
 - [ ] `tests/test_upload.py` - Upload functionality tests
 - [ ] `tests/test_api.py` - API endpoint tests (FastAPI only)
 
-## ❓ Troubleshooting
-
-### "How do I run both FastAPI and Dash?"
-
-If using FastAPI approach, you have two options:
-
-**Option 1: Separate processes** (Development)
-```bash
-# Terminal 1: Run FastAPI backend
-uv run uvicorn road_profile_viewer.api.main:app --reload --port 8000
-
-# Terminal 2: Run Dash frontend
-uv run python -m road_profile_viewer
-```
-
-**Option 2: Integrated** (Production-like)
-- Mount Dash app in FastAPI using `WSGIMiddleware`
-- Single process, single port
-- More complex but cleaner deployment
-
-### "Database file not found"
-
-Make sure your seed script runs on first startup:
-
-```python
-# In database setup
-if not Path("profiles.db").exists():
-    init_database()
-    seed_default_profile()
-```
-
-### "Coverage below 90%"
-
-Focus on testing YOUR new code:
-```bash
-# See what's not covered
-uv run pytest --cov=src/road_profile_viewer/database --cov-report=term-missing
-
-# Common untested areas:
-# - Error handling paths
-# - Edge cases in validation
-# - Database exceptions
-```
-
-### "Import errors after adding database module"
-
-Make sure `__init__.py` exists in all new folders:
-```
-src/road_profile_viewer/database/
-├── __init__.py  ← MUST EXIST
-├── models.py
-└── connection.py
-```
-
-### "Dropdown not updating"
-
-Check your Dash callback:
-```python
-@app.callback(
-    Output('road-graph', 'figure'),
-    Input('profile-dropdown', 'value')  # Listen to dropdown changes
-)
-def update_graph(selected_profile_name):
-    # Fetch profile from database by name
-    # Update graph with new profile
-    pass
-```
-
-### "JSON validation always fails"
-
-Verify your Pydantic model matches the example JSON:
-```python
-# Must handle list[float], not str
-x_coordinates: list[float]  # ✅
-x_coordinates: str          # ❌
-```
-
 ## 📚 Technical Resources
 
 ### FastAPI + SQLModel Approach
@@ -585,15 +452,6 @@ x_coordinates: str          # ❌
 ### Testing
 - [pytest Documentation](https://docs.pytest.org/)
 - [pytest-cov Coverage](https://pytest-cov.readthedocs.io/)
-
-## 🆘 Getting Help
-
-1. **Check documentation** - Links above
-2. **Review implementation plan** - Did you account for this?
-3. **Ask in team chat** - Collaborate with teammates
-4. **Check CI error messages** - They're detailed!
-5. **Office hours** - Instructor available for questions
-6. **GitHub Discussions** - Ask publicly, help others
 
 ## 🎉 Success Criteria
 

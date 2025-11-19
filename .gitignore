@@ -47,7 +47,18 @@ Thumbs.db
 .coverage.*
 htmlcov/
 coverage.xml
+coverage.json
 *.cover
+
+# Database files (student implementations)
+*.db
+*.sqlite
+*.sqlite3
+profiles.json
+db.json
+data/*.json
+database/*.db
+database/*.sqlite
 
 # Project specific
 *.log

@@ -9,15 +9,18 @@ Willkommen zur Übung "Straßenprofil-Datenbank & Upload-System"! Dies ist eine 
 
 ## 📚 Lernziele
 
+Diese Übung führt Sie in **professionelle Feature-Entwicklungs-Workflows** ein und nutzt moderne Software-Engineering-Praktiken. Sie erleben Ihren ersten vollständigen Entwicklungszyklus - eine pädagogische Vorschau auf Agile/Scrum-Methodologien, die in späteren Vorlesungen behandelt werden.
+
 Durch diese Übung werden Sie:
 
-1. **Datenbanken integrieren** in Web-Anwendungen (SQLite mit FastAPI/SQLModel ODER TinyDB)
-2. **REST APIs entwerfen und implementieren** (bei FastAPI-Ansatz)
-3. **Multi-Page Dash-Anwendungen erstellen** mit Datei-Upload und Datenvalidierung
-4. **Pydantic-Validierung anwenden** für Datenintegrität
-5. **Kollaborative Entwicklung praktizieren** mit Feature Branches und Code Reviews
-6. **Hohe Testabdeckung erreichen** (90%+ bei neuen Features)
-7. **Implementierungsentscheidungen dokumentieren** und technische Planung
+1. **Professionelle Feature-Entwicklung erleben** mit ordentlichen Planungs-, Implementierungs-, Test- und Review-Zyklen
+2. **Datenbanken integrieren** in Web-Anwendungen (SQLite mit FastAPI/SQLModel ODER TinyDB)
+3. **REST APIs entwerfen und implementieren** (bei FastAPI-Ansatz)
+4. **Multi-Page Dash-Anwendungen erstellen** mit Datei-Upload und Datenvalidierung
+5. **Pydantic-Validierung anwenden** für Datenintegrität
+6. **Kollaborative Entwicklung praktizieren** mit Feature Branches und Code Reviews
+7. **Hohe Testabdeckung erreichen** (90%+ bei neuen Features) mit qualitätsgetriebener Entwicklung
+8. **Implementierungsentscheidungen dokumentieren** und technische Planung
 
 ## 🎯 Aufgabenübersicht
 
@@ -228,6 +231,8 @@ src/road_profile_viewer/
 
 ## 🚀 Erste Schritte
 
+> **Wichtig:** Sie sind **vollkommen unabhängig** in Ihrer Herangehensweise an diese Aufgabe. Die folgenden Schritte sind **Vorschläge** zur Orientierung, aber Sie können gerne Ihren eigenen Workflow entwickeln, der am besten für Ihr Team funktioniert!
+
 ### Schritt 1: Aufgabe annehmen & Team bilden
 
 ```bash
@@ -259,26 +264,18 @@ uv run python -m road_profile_viewer
 - `src/road_profile_viewer/geometry.py` - Schnittberechnungen
 - `src/road_profile_viewer/road.py` - Aktuelle Profil-Generierung
 
-### Schritt 3: Implementierungsplan erstellen
+### Schritt 3: Implementierung planen
 
-**Team-Meeting zur Entscheidung:**
-1. Welcher Ansatz? (FastAPI oder TinyDB)
-2. Wer macht was? (Features Mitgliedern zuweisen)
-3. Wie heißen die Branches?
-4. Wie 90% Testabdeckung erreichen?
+**Halten Sie ein Team-Meeting ab, um zu entscheiden:**
 
-**Dokumentieren in** `docs/implementation-plan.md`
+1. Welcher technische Ansatz? (FastAPI oder TinyDB)
+2. Wie teilen Sie die Arbeit auf? (wer macht was)
+3. Wie wird Ihre Branch-Strategie aussehen?
+4. Wie werden Sie 90% Testabdeckung erreichen?
 
-```bash
-# docs-Ordner erstellen, falls nicht vorhanden
-mkdir docs
+**Füllen Sie das bereitgestellte Template aus:** `docs/implementation-plan.md`
 
-# Implementierungsplan erstellen (bereitgestelltes Template verwenden)
-# Plan committen
-git add docs/implementation-plan.md
-git commit -m "Implementierungsplan für Datenbank- und Upload-Features hinzufügen"
-git push origin main
-```
+Das Template ist bereits in Ihrem Repository - passen Sie es an die Bedürfnisse Ihres Teams an.
 
 ### Schritt 4: Entwicklungsumgebung einrichten
 
@@ -301,85 +298,32 @@ cat docs/example-road-profile.json
 }
 ```
 
-### Schritt 5: Features implementieren (Team-Zusammenarbeit)
+### Schritt 5: Features entwickeln
 
-**Mitglied 1: Datenbank-Setup**
+**Teilen Sie die Arbeit unter den Teammitgliedern auf.** Erstellen Sie Feature Branches für jede Hauptkomponente. Hier sind einige vorgeschlagene Arbeitspakete, aber Sie können auch anders organisieren:
 
-```bash
-# Feature Branch erstellen
-git checkout -b feature/database-setup
+- Datenbank-Setup und Schema
+- Dropdown-Selector-Integration
+- Upload-Seite mit Validierung
+- API-Endpunkte (falls FastAPI verwendet wird)
+- Testing und Coverage
 
-# Datenbank-Modul-Struktur erstellen
-# Für FastAPI-Ansatz:
-mkdir -p src/road_profile_viewer/database
-touch src/road_profile_viewer/database/__init__.py
-touch src/road_profile_viewer/database/models.py
-touch src/road_profile_viewer/database/connection.py
-
-# Für TinyDB-Ansatz:
-mkdir -p src/road_profile_viewer/database
-touch src/road_profile_viewer/database/__init__.py
-touch src/road_profile_viewer/database/db.py
-
-# Datenbankmodelle und Operationen implementieren
-# Seed-Skript zum Einfügen des Standard-Profils hinzufügen
-
-# Inkrementell committen
-git add .
-git commit -m "Datenbankmodelle und Verbindungs-Setup hinzufügen"
-
-# Tests schreiben
-git add tests/test_database.py
-git commit -m "Datenbank-Operations-Tests hinzufügen (90% Abdeckung)"
-
-# Pushen und PR erstellen
-git push -u origin feature/database-setup
-gh pr create --title "Datenbank-Setup mit Seed-Skript hinzufügen" \
-  --body "[Bereitgestelltes PR-Template verwenden]"
-```
-
-**Mitglied 2: Dropdown-Auswahl**
+**Beispiel-Workflow für ein Feature:**
 
 ```bash
-git checkout -b feature/dropdown-selector
+# Erstellen Sie Ihren Feature Branch
+git checkout -b feature/ihr-feature-name
 
-# visualization.py aktualisieren für:
-# 1. Dropdown-Komponente hinzufügen
-# 2. Profile aus Datenbank abrufen
-# 3. Callback aktualisieren für Profil-Auswahl
-# 4. Ausgewählte Profil-Daten laden
+# Implementieren Sie Ihr Feature
+# Schreiben Sie Tests während der Entwicklung
+# Committen Sie inkrementell mit aussagekräftigen Nachrichten
 
-# Committen und testen
-# Pushen und PR erstellen
+# Pushen und PR mit dem Template erstellen
+git push -u origin feature/ihr-feature-name
+gh pr create
 ```
 
-**Mitglied 3: Upload-Seite**
-
-```bash
-git checkout -b feature/upload-page
-
-# Neue Seite in Dash-App erstellen:
-# 1. dcc.Upload-Komponente hinzufügen
-# 2. Vorschau-Grafik hinzufügen
-# 3. Umbenennungs-Texteingabe hinzufügen
-# 4. Bestätigungs-Button hinzufügen
-# 5. Navigation hinzufügen
-
-# Committen, testen, PR
-```
-
-**Mitglied 4 (falls 4-Personen-Team): API-Schicht** (nur FastAPI)
-
-```bash
-git checkout -b feature/api-endpoints
-
-# FastAPI-App erstellen:
-mkdir -p src/road_profile_viewer/api
-# REST-Endpunkte implementieren
-# API-Tests hinzufügen
-
-# Committen, testen, PR
-```
+**Denken Sie daran:** Jedes Feature sollte Tests haben, Code-Qualitätsstandards folgen und durch Code Review gehen, bevor es gemergt wird.
 
 ### Schritt 6: Code Review-Prozess
 
@@ -489,83 +433,6 @@ Dozent wird:
 - [ ] `tests/test_database.py` - Datenbank-Operations-Tests
 - [ ] `tests/test_upload.py` - Upload-Funktionalitäts-Tests
 - [ ] `tests/test_api.py` - API Endpunkt-Tests (nur FastAPI)
-
-## ❓ Problembehandlung
-
-### "Wie führe ich FastAPI und Dash zusammen aus?"
-
-Bei FastAPI-Ansatz haben Sie zwei Optionen:
-
-**Option 1: Separate Prozesse** (Entwicklung)
-```bash
-# Terminal 1: FastAPI Backend ausführen
-uv run uvicorn road_profile_viewer.api.main:app --reload --port 8000
-
-# Terminal 2: Dash Frontend ausführen
-uv run python -m road_profile_viewer
-```
-
-**Option 2: Integriert** (Produktionsähnlich)
-- Dash-App in FastAPI mit `WSGIMiddleware` mounten
-- Einzelner Prozess, einzelner Port
-- Komplexer aber saubereres Deployment
-
-### "Datenbank-Datei nicht gefunden"
-
-Stellen Sie sicher, dass Ihr Seed-Skript beim ersten Start läuft:
-
-```python
-# In Datenbank-Setup
-if not Path("profiles.db").exists():
-    init_database()
-    seed_default_profile()
-```
-
-### "Abdeckung unter 90%"
-
-Fokus auf Testen IHRES neuen Codes:
-```bash
-# Sehen, was nicht abgedeckt ist
-uv run pytest --cov=src/road_profile_viewer/database --cov-report=term-missing
-
-# Häufig nicht getestete Bereiche:
-# - Error Handling-Pfade
-# - Edge Cases in Validierung
-# - Datenbank-Exceptions
-```
-
-### "Import-Fehler nach Hinzufügen des Datenbank-Moduls"
-
-Stellen Sie sicher, dass `__init__.py` in allen neuen Ordnern existiert:
-```
-src/road_profile_viewer/database/
-├── __init__.py  ← MUSS EXISTIEREN
-├── models.py
-└── connection.py
-```
-
-### "Dropdown aktualisiert nicht"
-
-Prüfen Sie Ihren Dash-Callback:
-```python
-@app.callback(
-    Output('road-graph', 'figure'),
-    Input('profile-dropdown', 'value')  # Auf Dropdown-Änderungen hören
-)
-def update_graph(selected_profile_name):
-    # Profil aus Datenbank nach Namen abrufen
-    # Grafik mit neuem Profil aktualisieren
-    pass
-```
-
-### "JSON-Validierung schlägt immer fehl"
-
-Verifizieren Sie, dass Ihr Pydantic-Modell zum Beispiel-JSON passt:
-```python
-# Muss list[float] handhaben, nicht str
-x_coordinates: list[float]  # ✅
-x_coordinates: str          # ❌
-```
 
 ## 📚 Technische Ressourcen
 

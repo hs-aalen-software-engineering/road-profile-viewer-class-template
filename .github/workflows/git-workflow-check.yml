@@ -54,17 +54,138 @@ jobs:
           echo "max_score=$max_score" >> $GITHUB_OUTPUT
 
           if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Create branch with: \`git checkout -b feature/refactor-to-modules\`" >> /tmp/git_feedback.md
+            echo "💡 **Hint:** Create branch with: \`git checkout -b feature/your-feature-name\`" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
 
-      - name: Check multiple commits (incremental refactoring)
+      - name: Check for multiple feature branches (group work)
+        id: multiple_branches
+        run: |
+          echo "🔍 Checking for multiple feature branches..."
+
+          score=0
+          max_score=3
+          feedback="### 🌳 Multiple Feature Branches - Group Work (0/$max_score points)\n\n"
+
+          # Get all feature branches (both local and remote)
+          git fetch origin --prune > /dev/null 2>&1 || true
+          feature_branches=$(git branch -a | grep -E '(remotes/origin/feature/|^\s*feature/)' | sed 's/.*origin\///' | sed 's/^\s*//' | sort -u | grep -v HEAD || echo "")
+          branch_count=$(echo "$feature_branches" | grep -v "^$" | wc -l)
+
+          echo "Found $branch_count feature branches"
+
+          if [ $branch_count -ge 4 ]; then
+            echo "✅ Excellent! Found $branch_count feature branches"
+            feedback+="✅ **Excellent!** Found $branch_count feature branches (+3 points)\n\n"
+            feedback+="Branches:\n"
+            echo "$feature_branches" | while read branch; do
+              [ -n "$branch" ] && feedback+="- \`$branch\`\n"
+            done
+            score=3
+          elif [ $branch_count -eq 3 ]; then
+            echo "✅ Good! Found 3 feature branches"
+            feedback+="✅ **Good!** Found 3 feature branches (+3 points)\n\n"
+            feedback+="Branches:\n"
+            echo "$feature_branches" | while read branch; do
+              [ -n "$branch" ] && feedback+="- \`$branch\`\n"
+            done
+            score=3
+          elif [ $branch_count -eq 2 ]; then
+            echo "✅ Meets requirement! Found 2 feature branches"
+            feedback+="✅ **Meets requirement!** Found 2 feature branches (+2 points)\n\n"
+            feedback+="Branches:\n"
+            echo "$feature_branches" | while read branch; do
+              [ -n "$branch" ] && feedback+="- \`$branch\`\n"
+            done
+            score=2
+          elif [ $branch_count -eq 1 ]; then
+            echo "⚠️ Only 1 feature branch found - need at least 2"
+            feedback+="⚠️ Only 1 feature branch found (+0 points)\n"
+            feedback+="**Requirement:** At least 2 feature branches for group work\n"
+          else
+            echo "❌ No feature branches found"
+            feedback+="❌ No feature branches found (0 points)\n"
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+          if [ $score -lt 2 ]; then
+            echo "💡 **Hint:** Create at least 2 feature branches for different features (e.g., \`feature/database-setup\`, \`feature/upload-page\`)" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
+
+      - name: Check for multiple contributors (group work)
+        id: multiple_authors
+        run: |
+          echo "🔍 Checking for multiple contributors..."
+
+          score=0
+          max_score=3
+          feedback="### 👥 Multiple Contributors - Group Work (0/$max_score points)\n\n"
+
+          # Get all unique authors from all branches
+          authors=$(git log --all --format='%an <%ae>' | sort -u)
+          author_count=$(echo "$authors" | grep -v "^$" | wc -l)
+
+          echo "Found $author_count unique authors"
+
+          if [ $author_count -ge 4 ]; then
+            echo "✅ Excellent! Found $author_count contributors"
+            feedback+="✅ **Excellent!** Found $author_count unique contributors (+3 points)\n\n"
+            feedback+="Contributors:\n"
+            echo "$authors" | while read author; do
+              [ -n "$author" ] && feedback+="- $author\n"
+            done
+            score=3
+          elif [ $author_count -eq 3 ]; then
+            echo "✅ Great! Found 3 contributors"
+            feedback+="✅ **Great!** Found 3 unique contributors (+3 points)\n\n"
+            feedback+="Contributors:\n"
+            echo "$authors" | while read author; do
+              [ -n "$author" ] && feedback+="- $author\n"
+            done
+            score=3
+          elif [ $author_count -eq 2 ]; then
+            echo "✅ Good! Found 2 contributors"
+            feedback+="✅ **Good!** Found 2 unique contributors (+2 points)\n\n"
+            feedback+="Contributors:\n"
+            echo "$authors" | while read author; do
+              [ -n "$author" ] && feedback+="- $author\n"
+            done
+            score=2
+          elif [ $author_count -eq 1 ]; then
+            echo "⚠️ Only 1 contributor found - this is a group assignment"
+            feedback+="⚠️ Only 1 contributor found (+0 points)\n"
+            feedback+="**This is a group assignment** - ensure all team members contribute commits\n"
+          else
+            echo "❌ No contributors found"
+            feedback+="❌ No contributors found (0 points)\n"
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/git_feedback.md
+          echo "" >> /tmp/git_feedback.md
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+
+          if [ $score -lt 2 ]; then
+            echo "💡 **Hint:** Each team member should make commits. Configure git with: \`git config user.name\` and \`git config user.email\`" >> /tmp/git_feedback.md
+            echo "" >> /tmp/git_feedback.md
+          fi
+
+      - name: Check multiple commits (incremental development)
         id: commits
         run: |
           echo "🔍 Checking commit history..."
 
           score=0
-          max_score=4
+          max_score=3
           feedback="### 📝 Commit History (0/$max_score points)\n\n"
 
           # Count commits in this PR
@@ -73,21 +194,17 @@ jobs:
           echo "Found $commit_count commits in this PR"
           feedback+="Found **$commit_count commits** in this PR\n\n"
 
-          if [ "$commit_count" -ge 4 ]; then
+          if [ "$commit_count" -ge 3 ]; then
             echo "✅ Great! $commit_count commits shows excellent incremental work"
-            feedback+="✅ Excellent incremental refactoring with $commit_count commits (+4 points)\n"
-            score=4
-          elif [ "$commit_count" -eq 3 ]; then
-            echo "✅ Good! 3 commits shows incremental work"
-            feedback+="✅ Good incremental refactoring with 3 commits (+3 points)\n"
+            feedback+="✅ Excellent incremental development with $commit_count commits (+3 points)\n"
             score=3
           elif [ "$commit_count" -eq 2 ]; then
-            echo "⚠️ Only 2 commits - could be more incremental"
-            feedback+="⚠️ Only 2 commits - more granularity would be better (+2 points)\n"
+            echo "✅ Good! 2 commits shows incremental work"
+            feedback+="✅ Good incremental development with 2 commits (+2 points)\n"
             score=2
           elif [ "$commit_count" -eq 1 ]; then
-            echo "⚠️ Only 1 commit - should break down into steps"
-            feedback+="⚠️ Only 1 commit - should break into incremental steps (+1 point)\n"
+            echo "⚠️ Only 1 commit - consider breaking into smaller steps"
+            feedback+="⚠️ Only 1 commit - consider breaking into incremental steps (+1 point)\n"
             score=1
           else
             echo "❌ No commits found"
@@ -101,12 +218,8 @@ jobs:
           echo "score=$score" >> $GITHUB_OUTPUT
           echo "max_score=$max_score" >> $GITHUB_OUTPUT
 
-          if [ $score -lt 3 ]; then
-            echo "💡 **Hint:** Make incremental commits:" >> /tmp/git_feedback.md
-            echo "1. Extract geometry.py → commit" >> /tmp/git_feedback.md
-            echo "2. Extract road.py → commit" >> /tmp/git_feedback.md
-            echo "3. Extract visualization.py → commit" >> /tmp/git_feedback.md
-            echo "4. Simplify main.py → commit" >> /tmp/git_feedback.md
+          if [ $score -lt 2 ]; then
+            echo "💡 **Hint:** Break work into logical incremental commits (e.g., setup → implementation → tests)" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
 
@@ -116,7 +229,7 @@ jobs:
           echo "🔍 Checking commit message quality..."
 
           score=0
-          max_score=4
+          max_score=3
           feedback="### ✍️ Commit Message Quality (0/$max_score points)\n\n"
 
           # Get all commit messages in this PR
@@ -144,11 +257,11 @@ jobs:
             fi
           done < /tmp/commit_messages.txt
 
-          # Calculate score
+          # Calculate score (max 3 points)
           if [ $total_messages -eq 0 ]; then
             score=0
           else
-            # Each descriptive message is worth 1 point, max 4 points
+            # Each descriptive message is worth 1 point, max 3 points
             score=$descriptive_messages
             if [ $score -gt $max_score ]; then
               score=$max_score
@@ -164,7 +277,7 @@ jobs:
 
           if [ $score -lt $max_score ]; then
             echo "💡 **Hint:** Write descriptive commit messages (20+ characters) that explain WHAT and WHY" >> /tmp/git_feedback.md
-            echo "- ✅ Good: \"Extract geometry functions to geometry.py\"" >> /tmp/git_feedback.md
+            echo "- ✅ Good: \"Add database schema with SQLModel for road profiles\"" >> /tmp/git_feedback.md
             echo "- ❌ Bad: \"update\" or \"fix\"" >> /tmp/git_feedback.md
             echo "" >> /tmp/git_feedback.md
           fi
@@ -180,6 +293,14 @@ jobs:
           # Feature branch
           total_score=$((total_score + ${{ steps.feature_branch.outputs.score || 0 }}))
           total_max=$((total_max + ${{ steps.feature_branch.outputs.max_score || 0 }}))
+
+          # Multiple branches (group work)
+          total_score=$((total_score + ${{ steps.multiple_branches.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.multiple_branches.outputs.max_score || 0 }}))
+
+          # Multiple authors (group work)
+          total_score=$((total_score + ${{ steps.multiple_authors.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.multiple_authors.outputs.max_score || 0 }}))
 
           # Commits
           total_score=$((total_score + ${{ steps.commits.outputs.score || 0 }}))
@@ -199,11 +320,11 @@ jobs:
           if [ $percentage -ge 90 ]; then
             grade="A"
             emoji="🌟"
-            comment="Excellent Git workflow!"
+            comment="Excellent Git workflow and group collaboration!"
           elif [ $percentage -ge 80 ]; then
             grade="B"
             emoji="👍"
-            comment="Good Git workflow!"
+            comment="Good Git workflow and collaboration!"
           elif [ $percentage -ge 70 ]; then
             grade="C"
             emoji="👌"
@@ -215,7 +336,7 @@ jobs:
           else
             grade="F"
             emoji="❌"
-            comment="Significant Git workflow issues need to be addressed"
+            comment="Significant Git workflow and collaboration issues"
           fi
 
           echo "**Grade: $grade** $emoji" >> /tmp/git_feedback.md
@@ -224,7 +345,7 @@ jobs:
           echo "" >> /tmp/git_feedback.md
           echo "---" >> /tmp/git_feedback.md
           echo "" >> /tmp/git_feedback.md
-          echo "*This automated check validates your Git workflow practices. Keep up the good work! 🚀*" >> /tmp/git_feedback.md
+          echo "*This automated check validates your Git workflow and group collaboration practices.*" >> /tmp/git_feedback.md
 
           echo "score=$total_score" >> $GITHUB_OUTPUT
           echo "max_score=$total_max" >> $GITHUB_OUTPUT

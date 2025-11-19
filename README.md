@@ -100,15 +100,15 @@ src/road_profile_viewer/
 
 ## 📋 Requirements
 
-### 1. Implementation (2 points)
+### 1. Implementation (1.5 points)
 
-#### Dropdown Selector (0.8 points)
+#### Dropdown Selector (0.6 points)
 - [ ] Add dropdown component on main page to select road profiles
 - [ ] Dropdown lists all available profiles by name
 - [ ] Selecting a profile updates the visualization
 - [ ] Default profile pre-selected on app startup
 
-#### Upload Page (1.2 points)
+#### Upload Page (0.9 points)
 - [ ] Create new page/route in Dash app (`/upload`)
 - [ ] File upload component accepting JSON files
 - [ ] Preview graph showing uploaded profile before saving
@@ -117,20 +117,20 @@ src/road_profile_viewer/
 - [ ] Success/error messages after upload
 - [ ] Navigation between main page and upload page
 
-### 2. Backend & Database (1.5 points)
+### 2. Backend & Database (1.0 points)
 
-#### Database Schema (0.5 points)
+#### Database Schema (0.3 points)
 - [ ] Road profile model with fields: `id`, `name`, `x_coordinates`, `y_coordinates`
 - [ ] Unique constraint on profile names
 - [ ] Proper data types (list/array for coordinates)
 
-#### Database Operations (0.5 points)
+#### Database Operations (0.4 points)
 - [ ] Create (insert new profile)
 - [ ] Read (get all profiles, get by name/id)
 - [ ] Update (optional, but recommended)
 - [ ] Delete (optional, but recommended)
 
-#### Migration/Seed (0.5 points)
+#### Migration/Seed (0.3 points)
 - [ ] Script to initialize database
 - [ ] Seed default profile on first run
 - [ ] Database file in `.gitignore` (not committed)
@@ -377,14 +377,14 @@ uv run pyright
 
 | Category | Points | Criteria |
 |----------|--------|----------|
-| **Implementation** | 2.0 | Dropdown (0.8) + Upload page with preview/rename (1.2) |
-| **Backend/Database** | 1.5 | Schema (0.5) + CRUD operations (0.5) + Seed script (0.5) |
+| **Implementation** | 1.5 | Dropdown (0.6) + Upload page with preview/rename (0.9) |
+| **Backend/Database** | 1.0 | Schema (0.3) + CRUD operations (0.4) + Seed script (0.3) |
 | **Testing** | 0.5 | 90%+ C1 coverage on new features |
 | **Git Workflow** | 0.5 | ≥2 branches, clear commits, implementation plan |
 | **Code Review** | 0.5 | PRs with template, peer reviews, CI passes |
 | **BONUS: FastAPI** | +1.0 | REST API + proper error handling + separation of concerns |
-| **Total (TinyDB)** | **5.0** | Maximum achievable with TinyDB approach |
-| **Total (FastAPI)** | **6.0** | Capped at 5.0 (bonus allows error margin) |
+| **Total (TinyDB)** | **4.0** | Maximum achievable with TinyDB approach |
+| **Total (FastAPI)** | **5.0** | Capped at 5.0 (bonus allows error margin up to 6.0) |
 
 ### Automated Checks
 

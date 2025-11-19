@@ -100,15 +100,15 @@ src/road_profile_viewer/
 
 ## 📋 Anforderungen
 
-### 1. Implementierung (2 Punkte)
+### 1. Implementierung (1,5 Punkte)
 
-#### Dropdown-Auswahl (0,8 Punkte)
+#### Dropdown-Auswahl (0,6 Punkte)
 - [ ] Dropdown-Komponente auf Hauptseite zur Auswahl von Straßenprofilen
 - [ ] Dropdown listet alle verfügbaren Profile nach Namen auf
 - [ ] Auswahl eines Profils aktualisiert die Visualisierung
 - [ ] Standard-Profil beim App-Start vorausgewählt
 
-#### Upload-Seite (1,2 Punkte)
+#### Upload-Seite (0,9 Punkte)
 - [ ] Neue Seite/Route in Dash-App erstellen (`/upload`)
 - [ ] Datei-Upload-Komponente, die JSON-Dateien akzeptiert
 - [ ] Vorschau-Grafik, die hochgeladenes Profil vor dem Speichern zeigt
@@ -117,20 +117,20 @@ src/road_profile_viewer/
 - [ ] Erfolgs-/Fehlermeldungen nach Upload
 - [ ] Navigation zwischen Hauptseite und Upload-Seite
 
-### 2. Backend & Datenbank (1,5 Punkte)
+### 2. Backend & Datenbank (1,0 Punkte)
 
-#### Datenbank-Schema (0,5 Punkte)
+#### Datenbank-Schema (0,3 Punkte)
 - [ ] Straßenprofil-Modell mit Feldern: `id`, `name`, `x_coordinates`, `y_coordinates`
 - [ ] Unique-Constraint auf Profilnamen
 - [ ] Richtige Datentypen (list/array für Koordinaten)
 
-#### Datenbank-Operationen (0,5 Punkte)
+#### Datenbank-Operationen (0,4 Punkte)
 - [ ] Create (neues Profil einfügen)
 - [ ] Read (alle Profile abrufen, nach Name/ID abrufen)
 - [ ] Update (optional, aber empfohlen)
 - [ ] Delete (optional, aber empfohlen)
 
-#### Migration/Seed (0,5 Punkte)
+#### Migration/Seed (0,3 Punkte)
 - [ ] Skript zur Datenbank-Initialisierung
 - [ ] Standard-Profil beim ersten Start einfügen
 - [ ] Datenbank-Datei in `.gitignore` (nicht committen)
@@ -377,14 +377,14 @@ uv run pyright
 
 | Kategorie | Punkte | Kriterien |
 |-----------|--------|-----------|
-| **Implementierung** | 2,0 | Dropdown (0,8) + Upload-Seite mit Vorschau/Umbenennung (1,2) |
-| **Backend/Datenbank** | 1,5 | Schema (0,5) + CRUD-Operationen (0,5) + Seed-Skript (0,5) |
+| **Implementierung** | 1,5 | Dropdown (0,6) + Upload-Seite mit Vorschau/Umbenennung (0,9) |
+| **Backend/Datenbank** | 1,0 | Schema (0,3) + CRUD-Operationen (0,4) + Seed-Skript (0,3) |
 | **Testing** | 0,5 | 90%+ C1-Abdeckung für neue Features |
 | **Git Workflow** | 0,5 | ≥2 Branches, klare Commits, Implementierungsplan |
 | **Code Review** | 0,5 | PRs mit Template, Peer Reviews, CI bestanden |
 | **BONUS: FastAPI** | +1,0 | REST API + ordentliches Error Handling + Separation of Concerns |
-| **Gesamt (TinyDB)** | **5,0** | Maximal erreichbar mit TinyDB-Ansatz |
-| **Gesamt (FastAPI)** | **6,0** | Begrenzt auf 5,0 (Bonus erlaubt Fehlertoleranz) |
+| **Gesamt (TinyDB)** | **4,0** | Maximal erreichbar mit TinyDB-Ansatz |
+| **Gesamt (FastAPI)** | **5,0** | Begrenzt auf 5,0 (Bonus erlaubt Fehlertoleranz bis 6,0) |
 
 ### Automatisierte Prüfungen
 

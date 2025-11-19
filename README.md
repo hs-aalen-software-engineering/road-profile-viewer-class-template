@@ -37,7 +37,7 @@ You will extend the existing road profile viewer application with these features
 3. **Upload page** where users can add new profiles via JSON files
 4. **Profile preview** showing graph before saving
 5. **Profile renaming** capability on upload page
-6. **Data validation** using Pydantic models
+6. **Data validation** using Pydantic models (validates uploaded JSON, e.g., reject if x/y coordinate lists have different lengths)
 
 ## 🏗️ Technical Approaches
 

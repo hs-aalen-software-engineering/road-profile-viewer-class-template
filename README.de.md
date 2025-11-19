@@ -37,7 +37,7 @@ Sie werden die bestehende Straßenprofil-Viewer-Anwendung um folgende Features e
 3. **Upload-Seite**, auf der Benutzer neue Profile via JSON-Dateien hinzufügen können
 4. **Profil-Vorschau** mit Grafik vor dem Speichern
 5. **Profil-Umbenennung** auf der Upload-Seite
-6. **Datenvalidierung** mit Pydantic-Modellen
+6. **Datenvalidierung** mit Pydantic-Modellen (validiert hochgeladene JSON-Dateien, z.B. Ablehnung wenn x/y-Koordinatenlisten unterschiedliche Längen haben)
 
 ## 🏗️ Technische Ansätze
 

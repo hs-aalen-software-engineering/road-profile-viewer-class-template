@@ -26,6 +26,7 @@ dev = [
     "pre-commit>=4.0.1",
     "pyright>=1.1.406",
     "pytest>=8.4.2",
+    "pytest-cov>=6.0.0",
     "ruff>=0.14.0",
 ]
 
@@ -77,3 +78,16 @@ reportUnknownMemberType = "warning"
 reportUnknownParameterType = "warning"
 reportUnknownVariableType = "warning"
 reportUnknownArgumentType = "warning"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false

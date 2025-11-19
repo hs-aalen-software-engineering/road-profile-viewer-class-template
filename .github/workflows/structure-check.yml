@@ -32,37 +32,43 @@ jobs:
         run: |
           echo "🔍 Checking required documentation..."
 
-          score=0
-          max_score=3
-          feedback="### 📁 Documentation (0/$max_score points)\n\n"
+          feedback="### 📁 Documentation\n\n"
+          docs_passed=0
+          docs_total=2
 
           if [ -f docs/implementation-plan.md ]; then
             echo "✅ docs/implementation-plan.md exists"
-            feedback+="✅ **Implementation plan** exists (+2 points)\n"
-            score=$((score + 2))
+            feedback+="✅ **Implementation plan** exists\n"
+            docs_passed=$((docs_passed + 1))
           else
             echo "❌ docs/implementation-plan.md not found"
-            feedback+="❌ **Implementation plan** missing (0 points)\n"
+            feedback+="❌ **Implementation plan** missing\n"
           fi
 
           if [ -f docs/example-road-profile.json ]; then
             echo "✅ docs/example-road-profile.json exists"
-            feedback+="✅ **Example JSON** exists (+1 point)\n"
-            score=$((score + 1))
+            feedback+="✅ **Example JSON** exists\n"
+            docs_passed=$((docs_passed + 1))
           else
             echo "❌ docs/example-road-profile.json not found"
-            feedback+="❌ **Example JSON** missing (0 points)\n"
+            feedback+="❌ **Example JSON** missing\n"
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          if [ $docs_passed -eq $docs_total ]; then
+            feedback+="\n✅ **Status:** PASSED - All documentation files present\n"
+            passed=true
+          else
+            feedback+="\n❌ **Status:** FAILED - Missing $((docs_total - docs_passed)) file(s)\n"
+            passed=false
+          fi
+
           echo -e "$feedback" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Create implementation plan in docs/ folder" >> /tmp/feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Create implementation plan in docs/ folder" >> /tmp/feedback.md
             echo "" >> /tmp/feedback.md
           fi
 
@@ -72,38 +78,38 @@ jobs:
         run: |
           echo "🔍 Checking Pydantic validation models..."
 
-          score=0
-          max_score=2
-          feedback="### 🔬 Pydantic Models (0/$max_score points)\n\n"
+          feedback="### 🔬 Pydantic Models\n\n"
 
           if [ -f src/road_profile_viewer/models.py ]; then
             echo "✅ models.py exists"
-            feedback+="✅ **models.py** exists (+1 point)\n"
-            score=$((score + 1))
+            feedback+="✅ **models.py** exists\n"
 
             # Check for RoadProfile model
             if grep -q "class RoadProfile" src/road_profile_viewer/models.py; then
               echo "✅ RoadProfile model found"
-              feedback+="✅ **RoadProfile** model defined (+1 point)\n"
-              score=$((score + 1))
+              feedback+="✅ **RoadProfile** model defined\n"
+              feedback+="\n✅ **Status:** PASSED - Pydantic models present\n"
+              passed=true
             else
               echo "❌ RoadProfile model not found"
-              feedback+="❌ **RoadProfile** model missing (0 points)\n"
+              feedback+="❌ **RoadProfile** model missing\n"
+              feedback+="\n❌ **Status:** FAILED - RoadProfile model not defined\n"
+              passed=false
             fi
           else
             echo "❌ models.py not found"
-            feedback+="❌ **models.py** missing (0 points)\n"
+            feedback+="❌ **models.py** missing\n"
+            feedback+="\n❌ **Status:** FAILED - models.py file not found\n"
+            passed=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Create src/road_profile_viewer/models.py with Pydantic models" >> /tmp/feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Create src/road_profile_viewer/models.py with Pydantic models" >> /tmp/feedback.md
             echo "" >> /tmp/feedback.md
           fi
 
@@ -113,39 +119,39 @@ jobs:
         run: |
           echo "🔍 Checking database module..."
 
-          score=0
-          max_score=2
-          feedback="### 💾 Database Module (0/$max_score points)\n\n"
+          feedback="### 💾 Database Module\n\n"
 
           # Check if database folder exists
           if [ -d src/road_profile_viewer/database ]; then
             echo "✅ database/ folder exists"
-            feedback+="✅ **database/** folder exists (+1 point)\n"
-            score=$((score + 1))
+            feedback+="✅ **database/** folder exists\n"
 
             # Check for either SQLModel models or TinyDB implementation
             if [ -f src/road_profile_viewer/database/models.py ] || [ -f src/road_profile_viewer/database/db.py ]; then
               echo "✅ Database implementation found"
-              feedback+="✅ **Database implementation** found (+1 point)\n"
-              score=$((score + 1))
+              feedback+="✅ **Database implementation** found\n"
+              feedback+="\n✅ **Status:** PASSED - Database module present\n"
+              passed=true
             else
               echo "❌ No database implementation found"
-              feedback+="❌ **Database implementation** missing (0 points)\n"
+              feedback+="❌ **Database implementation** missing\n"
+              feedback+="\n❌ **Status:** FAILED - No database implementation files\n"
+              passed=false
             fi
           else
             echo "❌ database/ folder not found"
-            feedback+="❌ **database/** folder missing (0 points)\n"
+            feedback+="❌ **database/** folder missing\n"
+            feedback+="\n❌ **Status:** FAILED - database/ folder not found\n"
+            passed=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Create src/road_profile_viewer/database/ with your chosen approach (FastAPI or TinyDB)" >> /tmp/feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Create src/road_profile_viewer/database/ with your chosen approach (FastAPI or TinyDB)" >> /tmp/feedback.md
             echo "" >> /tmp/feedback.md
           fi
 
@@ -156,31 +162,30 @@ jobs:
         run: |
           echo "🔍 Checking for FastAPI implementation (bonus)..."
 
-          score=0
-          max_score=2
-          feedback="### 🚀 FastAPI Implementation - BONUS (0/$max_score points)\n\n"
+          feedback="### 🚀 FastAPI Implementation - BONUS\n\n"
 
           if [ -d src/road_profile_viewer/api ]; then
             echo "✅ api/ folder exists"
-            feedback+="✅ **api/** folder exists (+1 point)\n"
-            score=$((score + 1))
+            feedback+="✅ **api/** folder exists\n"
 
             if [ -f src/road_profile_viewer/api/main.py ]; then
               echo "✅ api/main.py found"
-              feedback+="✅ **FastAPI app** found (+1 point bonus!)\n"
-              score=$((score + 1))
+              feedback+="✅ **FastAPI app** found - Bonus approach detected!\n"
+              api_present=true
+            else
+              feedback+="ℹ️ **api/main.py** not found yet\n"
+              api_present=false
             fi
           else
             echo "ℹ️ No API folder (using TinyDB approach)"
             feedback+="ℹ️ **No API folder** - Using TinyDB approach\n"
+            api_present=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "api_present=$api_present" >> $GITHUB_OUTPUT
 
       - name: Check .gitignore includes database file
         id: gitignore
@@ -188,108 +193,75 @@ jobs:
         run: |
           echo "🔍 Checking .gitignore..."
 
-          score=0
-          max_score=1
-          feedback="### 🚫 .gitignore (0/$max_score points)\n\n"
+          feedback="### 🚫 .gitignore\n\n"
 
           if [ -f .gitignore ]; then
             # Check for common database file patterns
             if grep -qE "\.db$|\.sqlite|profiles\.json|database/.*\.json" .gitignore; then
               echo "✅ Database files in .gitignore"
-              feedback+="✅ **Database files** excluded from git (+1 point)\n"
-              score=$((score + 1))
+              feedback+="✅ **Database files** excluded from git\n"
+              feedback+="\n✅ **Status:** PASSED - Database files properly ignored\n"
+              passed=true
             else
               echo "⚠️ Database files might not be ignored"
-              feedback+="⚠️ **Consider adding** database files to .gitignore\n"
+              feedback+="⚠️ **Database files** might not be ignored\n"
+              feedback+="\n❌ **Status:** FAILED - Missing database file patterns in .gitignore\n"
+              passed=false
             fi
+          else
+            feedback+="❌ **.gitignore** not found\n"
+            feedback+="\n❌ **Status:** FAILED - .gitignore file missing\n"
+            passed=false
           fi
 
-          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
           echo -e "$feedback" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          echo "score=$score" >> $GITHUB_OUTPUT
-          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$passed" >> $GITHUB_OUTPUT
 
-          if [ $score -lt $max_score ]; then
-            echo "💡 **Hint:** Add \`*.db\`, \`*.sqlite\`, and data files to .gitignore" >> /tmp/feedback.md
+          if [ "$passed" != "true" ]; then
+            echo "💡 **Fix:** Add \`*.db\`, \`*.sqlite\`, and data files to .gitignore" >> /tmp/feedback.md
             echo "" >> /tmp/feedback.md
           fi
 
-      - name: Calculate final score
-        id: final
+      - name: Calculate summary
+        id: summary
         if: always()
         run: |
-          # Sum up all scores (excluding API bonus)
-          total_score=0
-          total_max=0
+          # Count how many checks passed
+          checks_passed=0
+          checks_total=4
 
-          # Documentation
-          total_score=$((total_score + ${{ steps.docs.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.docs.outputs.max_score || 0 }}))
+          docs_passed="${{ steps.docs.outputs.passed }}"
+          models_passed="${{ steps.models.outputs.passed }}"
+          database_passed="${{ steps.database.outputs.passed }}"
+          gitignore_passed="${{ steps.gitignore.outputs.passed }}"
 
-          # Models
-          total_score=$((total_score + ${{ steps.models.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.models.outputs.max_score || 0 }}))
+          [ "$docs_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$models_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$database_passed" = "true" ] && checks_passed=$((checks_passed + 1))
+          [ "$gitignore_passed" = "true" ] && checks_passed=$((checks_passed + 1))
 
-          # Database
-          total_score=$((total_score + ${{ steps.database.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.database.outputs.max_score || 0 }}))
-
-          # Gitignore
-          total_score=$((total_score + ${{ steps.gitignore.outputs.score || 0 }}))
-          total_max=$((total_max + ${{ steps.gitignore.outputs.max_score || 0 }}))
-
-          # API bonus (doesn't count against you if missing)
-          api_bonus=${{ steps.api.outputs.score || 0 }}
-
-          percentage=$((total_score * 100 / total_max))
+          percentage=$((checks_passed * 100 / checks_total))
 
           echo "---" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
-          echo "### 🎯 Base Score: $total_score / $total_max points ($percentage%)" >> /tmp/feedback.md
-
-          if [ $api_bonus -gt 0 ]; then
-            echo "### 🌟 Bonus: +$api_bonus points for FastAPI implementation!" >> /tmp/feedback.md
-          fi
-
+          echo "### 🎯 Summary: $checks_passed / $checks_total checks passed ($percentage%)" >> /tmp/feedback.md
           echo "" >> /tmp/feedback.md
 
-          if [ $percentage -ge 80 ]; then
-            grade="A"
-            emoji="🌟"
-            comment="Excellent structure!"
+          # Check for FastAPI bonus
+          api_present="${{ steps.api.outputs.api_present }}"
+          if [ "$api_present" = "true" ]; then
+            echo "🌟 **Bonus:** FastAPI implementation detected!" >> /tmp/feedback.md
+            echo "" >> /tmp/feedback.md
+          fi
+
+          if [ $percentage -eq 100 ]; then
+            echo "✅ **All structure checks passed!** ✅" >> /tmp/feedback.md
             all_passed=true
-          elif [ $percentage -ge 70 ]; then
-            grade="B"
-            emoji="👍"
-            comment="Good structure with minor gaps"
-            all_passed=false
-          elif [ $percentage -ge 60 ]; then
-            grade="C"
-            emoji="👌"
-            comment="Acceptable, but needs improvement"
-            all_passed=false
           else
-            grade="F"
-            emoji="❌"
-            comment="Critical structure issues"
+            echo "⚠️ **Some structure checks failed.** Please address them before merging." >> /tmp/feedback.md
             all_passed=false
-          fi
-
-          echo "**Grade: $grade** $emoji" >> /tmp/feedback.md
-          echo "" >> /tmp/feedback.md
-          echo "*$comment*" >> /tmp/feedback.md
-          echo "" >> /tmp/feedback.md
-
-          if [ $all_passed = true ]; then
-            echo "---" >> /tmp/feedback.md
-            echo "" >> /tmp/feedback.md
-            echo "✅ **Structure check passed!**" >> /tmp/feedback.md
-          else
-            echo "---" >> /tmp/feedback.md
-            echo "" >> /tmp/feedback.md
-            echo "⚠️ **Structure check has issues.** Please address them before merging." >> /tmp/feedback.md
           fi
 
           echo "" >> /tmp/feedback.md
@@ -297,10 +269,9 @@ jobs:
           echo "" >> /tmp/feedback.md
           echo "*This check validates your project structure matches the assignment requirements.*" >> /tmp/feedback.md
 
-          echo "score=$total_score" >> $GITHUB_OUTPUT
-          echo "max_score=$total_max" >> $GITHUB_OUTPUT
+          echo "checks_passed=$checks_passed" >> $GITHUB_OUTPUT
+          echo "checks_total=$checks_total" >> $GITHUB_OUTPUT
           echo "percentage=$percentage" >> $GITHUB_OUTPUT
-          echo "grade=$grade" >> $GITHUB_OUTPUT
           echo "all_passed=$all_passed" >> $GITHUB_OUTPUT
 
       - name: Post PR comment
@@ -347,13 +318,12 @@ jobs:
           echo "🎉 Structure Check Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Score: ${{ steps.final.outputs.score }} / ${{ steps.final.outputs.max_score }} (${{ steps.final.outputs.percentage }}%)"
-          echo "Grade: ${{ steps.final.outputs.grade }}"
+          echo "Checks: ${{ steps.summary.outputs.checks_passed }} / ${{ steps.summary.outputs.checks_total }} passed (${{ steps.summary.outputs.percentage }}%)"
           echo ""
           cat /tmp/feedback.md
 
       - name: Warn if structure incomplete
-        if: steps.final.outputs.all_passed != 'true'
+        if: steps.summary.outputs.all_passed != 'true'
         run: |
           echo ""
           echo "⚠️ Structure check found issues!"

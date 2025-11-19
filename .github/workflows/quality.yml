@@ -115,7 +115,7 @@ jobs:
             error_count=$(echo "$error_line" | grep -oP '\d+(?= error)' || echo "0")
             feedback+="❌ **Status:** FAILED - Found $error_count type errors\n\n"
             feedback+="\`\`\`\n"
-            tail -30 /tmp/pyright_output.txt >> /tmp/quality_feedback.md
+            feedback+="$(tail -30 /tmp/pyright_output.txt)\n"
             feedback+="\`\`\`\n\n"
             feedback+="💡 **Fix:** Add proper type hints and ensure all imports are correct\n"
             pyright_passed=false

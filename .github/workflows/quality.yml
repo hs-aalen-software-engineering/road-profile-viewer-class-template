@@ -200,6 +200,83 @@ jobs:
           echo "max_score=$max_score" >> $GITHUB_OUTPUT
           echo "passed=$pyright_passed" >> $GITHUB_OUTPUT
 
+      - name: Run tests with coverage
+        id: coverage
+        continue-on-error: true
+        run: |
+          echo "🔍 Running tests with coverage..."
+
+          score=0
+          max_score=10
+          feedback="### 📊 Test Coverage (0/$max_score points)\n\n"
+
+          # Run pytest with coverage
+          if uv run pytest --cov=src --cov-report=term-missing --cov-report=json > /tmp/coverage_output.txt 2>&1; then
+            echo "✅ Tests passed!"
+            tests_passed=true
+          else
+            echo "❌ Tests failed"
+            tests_passed=false
+          fi
+
+          cat /tmp/coverage_output.txt
+
+          # Extract coverage percentage from JSON report
+          if [ -f coverage.json ]; then
+            coverage_pct=$(python3 -c "import json; data=json.load(open('coverage.json')); print(int(data.get('totals', {}).get('percent_covered', 0)))")
+          else
+            coverage_pct=0
+          fi
+
+          echo "Coverage: $coverage_pct%"
+
+          feedback+="**Coverage:** ${coverage_pct}%\n\n"
+
+          # Scoring based on coverage threshold
+          if [ $coverage_pct -ge 90 ]; then
+            feedback+="✅ **Excellent coverage** (≥90%) (+10 points)\n"
+            score=10
+            coverage_passed=true
+          elif [ $coverage_pct -ge 80 ]; then
+            feedback+="⚠️ **Good coverage** (80-89%) (+7 points)\n"
+            feedback+="ℹ️ Target is 90%+ coverage\n"
+            score=7
+            coverage_passed=false
+          elif [ $coverage_pct -ge 70 ]; then
+            feedback+="⚠️ **Acceptable coverage** (70-79%) (+5 points)\n"
+            feedback+="ℹ️ Target is 90%+ coverage\n"
+            score=5
+            coverage_passed=false
+          elif [ $coverage_pct -ge 60 ]; then
+            feedback+="⚠️ **Low coverage** (60-69%) (+3 points)\n"
+            feedback+="❗ Please add more tests to reach 90%\n"
+            score=3
+            coverage_passed=false
+          else
+            feedback+="❌ **Insufficient coverage** (<60%) (0 points)\n"
+            feedback+="❗ Critical: Add comprehensive tests\n"
+            coverage_passed=false
+          fi
+
+          # Coverage details available in full report
+          if [ -f coverage.json ]; then
+            feedback+="\nRun \`uv run pytest --cov=src --cov-report=html\` locally for detailed coverage report.\n"
+          fi
+
+          feedback=$(echo -e "$feedback" | sed "s/(0\/$max_score points)/($score\/$max_score points)/")
+          echo -e "$feedback" >> /tmp/quality_feedback.md
+          echo "" >> /tmp/quality_feedback.md
+
+          if [ $score -lt $max_score ]; then
+            echo "💡 **How to fix:** Run \`uv run pytest --cov=src --cov-report=html\` and open \`htmlcov/index.html\` to see what's missing" >> /tmp/quality_feedback.md
+            echo "" >> /tmp/quality_feedback.md
+          fi
+
+          echo "score=$score" >> $GITHUB_OUTPUT
+          echo "max_score=$max_score" >> $GITHUB_OUTPUT
+          echo "passed=$coverage_passed" >> $GITHUB_OUTPUT
+          echo "coverage_pct=$coverage_pct" >> $GITHUB_OUTPUT
+
       - name: Calculate final score
         id: final
         if: always()
@@ -219,6 +296,10 @@ jobs:
           # Pyright
           total_score=$((total_score + ${{ steps.pyright.outputs.score || 0 }}))
           total_max=$((total_max + ${{ steps.pyright.outputs.max_score || 0 }}))
+
+          # Coverage
+          total_score=$((total_score + ${{ steps.coverage.outputs.score || 0 }}))
+          total_max=$((total_max + ${{ steps.coverage.outputs.max_score || 0 }}))
 
           percentage=$((total_score * 100 / total_max))
 
@@ -263,8 +344,9 @@ jobs:
           ruff_passed="${{ steps.ruff.outputs.passed }}"
           format_passed="${{ steps.format.outputs.passed }}"
           pyright_passed="${{ steps.pyright.outputs.passed }}"
+          coverage_passed="${{ steps.coverage.outputs.passed }}"
 
-          if [ "$ruff_passed" = "true" ] && [ "$format_passed" = "true" ] && [ "$pyright_passed" = "true" ]; then
+          if [ "$ruff_passed" = "true" ] && [ "$format_passed" = "true" ] && [ "$pyright_passed" = "true" ] && [ "$coverage_passed" = "true" ]; then
             echo "---" >> /tmp/quality_feedback.md
             echo "" >> /tmp/quality_feedback.md
             echo "✅ **All quality checks passed!**" >> /tmp/quality_feedback.md

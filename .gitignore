@@ -41,6 +41,14 @@ uv.lock
 .DS_Store
 Thumbs.db
 
+# Testing and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
 # Project specific
 *.log
 .cache/

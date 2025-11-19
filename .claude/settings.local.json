@@ -5,7 +5,8 @@
       "Bash(uv sync:*)",
       "Bash(uv run:*)",
       "Bash(git add:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(gh pr view:*)"
     ],
     "deny": [],
     "ask": []

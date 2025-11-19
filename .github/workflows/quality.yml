@@ -101,10 +101,10 @@ jobs:
           echo "🔍 Running Pyright type checker..."
 
           feedback="### 🔬 Type Checking\n\n"
-          feedback+="ℹ️ *Note: visualization.py is excluded due to Dash decorator type issues*\n\n"
+          feedback+="ℹ️ *Note: visualization.py is excluded due to Dash decorator type issues (configured in pyproject.toml)*\n\n"
 
-          # Run pyright excluding visualization.py
-          if uv run pyright --exclude='**/visualization.py' > /tmp/pyright_output.txt 2>&1; then
+          # Run pyright (visualization.py excluded via pyproject.toml)
+          if uv run pyright > /tmp/pyright_output.txt 2>&1; then
             echo "✅ Type checking passed!"
             feedback+="✅ **Status:** PASSED - No type errors\n"
             pyright_passed=true

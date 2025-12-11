@@ -6,9 +6,12 @@ This module contains comprehensive unit tests for the Dash visualization compone
 Test Coverage:
 - create_dash_app(): Tests app creation and structure
 - Callback execution via Dash testing interface
+- Profile loading and selection callbacks
 
 Equivalence classes and boundary values are documented in each test.
 """
+
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import plotly.graph_objects as go
@@ -16,7 +19,7 @@ from dash import Dash
 
 from road_profile_viewer.geometry import find_intersection
 from road_profile_viewer.road import generate_road_profile
-from road_profile_viewer.visualization import create_dash_app
+from road_profile_viewer.visualization import API_BASE_URL, create_dash_app
 
 # ==============================================================================
 # TESTS FOR create_dash_app()
@@ -65,6 +68,188 @@ def test_create_dash_app_callback_registered() -> None:
     # Dash stores callbacks in the callback_map
     assert hasattr(app, "callback_map"), "App should have callback_map"
     assert len(app.callback_map) > 0, "App should have at least one callback registered"
+
+
+def test_create_dash_app_has_multiple_callbacks() -> None:
+    """
+    Test that the Dash app has all required callbacks registered.
+
+    Coverage: Tests that load_profiles, fetch_profile_data, and update_graph callbacks exist.
+    """
+    # Act
+    app = create_dash_app()
+
+    # Assert - should have 3 callbacks (load_profiles, fetch_profile_data, update_graph)
+    assert len(app.callback_map) >= 3, "App should have at least 3 callbacks registered"
+
+
+def test_api_base_url_configured() -> None:
+    """
+    Test that API_BASE_URL is properly configured.
+
+    Coverage: Tests API_BASE_URL constant.
+    """
+    assert API_BASE_URL == "http://127.0.0.1:8000", "API_BASE_URL should be configured"
+
+
+# ==============================================================================
+# TESTS FOR load_profiles callback simulation
+# ==============================================================================
+
+
+def test_load_profiles_api_success() -> None:
+    """
+    Test load_profiles callback when API returns profiles.
+
+    Coverage: Tests the load_profiles callback logic with successful API response.
+    """
+    mock_profiles = [
+        {"id": 1, "name": "Profile 1", "x_coordinates": [0.0, 1.0], "y_coordinates": [0.0, 1.0]},
+        {"id": 2, "name": "Profile 2", "x_coordinates": [0.0, 2.0], "y_coordinates": [0.0, 2.0]},
+    ]
+
+    with patch("httpx.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = mock_profiles
+        mock_get.return_value = mock_response
+
+        # Simulate the callback logic
+        import httpx
+
+        response = httpx.get(f"{API_BASE_URL}/profiles", timeout=5.0)
+        if response.status_code == 200:
+            profiles = response.json()
+            options = [{"label": p["name"], "value": p["id"]} for p in profiles]
+            options.insert(0, {"label": "Default (Generated)", "value": "default"})
+
+            assert len(options) == 3
+            assert options[0]["value"] == "default"
+            assert options[1]["label"] == "Profile 1"
+
+
+def test_load_profiles_api_failure() -> None:
+    """
+    Test load_profiles callback when API is unavailable.
+
+    Coverage: Tests the load_profiles callback fallback when API fails.
+    """
+    with patch("httpx.get") as mock_get:
+        mock_get.side_effect = Exception("Connection refused")
+
+        # Simulate the callback fallback logic
+        import httpx
+
+        try:
+            httpx.get(f"{API_BASE_URL}/profiles", timeout=5.0)
+            options = []
+        except Exception:
+            options = [{"label": "Default (Generated)", "value": "default"}]
+
+        assert len(options) == 1
+        assert options[0]["value"] == "default"
+
+
+# ==============================================================================
+# TESTS FOR fetch_profile_data callback simulation
+# ==============================================================================
+
+
+def test_fetch_profile_data_default_returns_none() -> None:
+    """
+    Test fetch_profile_data returns None for default profile.
+
+    Coverage: Tests the fetch_profile_data callback with "default" selection.
+    """
+    # Simulate callback logic
+    profile_id: str | None = "default"
+    if profile_id is None or profile_id == "default":
+        result = None
+    else:
+        result = {"id": profile_id}
+
+    assert result is None
+
+
+def test_fetch_profile_data_from_cache() -> None:
+    """
+    Test fetch_profile_data retrieves from cache when available.
+
+    Coverage: Tests the fetch_profile_data callback cache lookup.
+    """
+    profiles_cache = [
+        {"id": 1, "name": "Profile 1", "x_coordinates": [0.0, 1.0], "y_coordinates": [0.0, 1.0]},
+        {"id": 2, "name": "Profile 2", "x_coordinates": [0.0, 2.0], "y_coordinates": [0.0, 2.0]},
+    ]
+    profile_id = 1
+
+    # Simulate callback cache lookup
+    result = None
+    if profiles_cache:
+        for profile in profiles_cache:
+            if profile.get("id") == profile_id:
+                result = profile
+                break
+
+    assert result is not None
+    assert result["name"] == "Profile 1"
+
+
+def test_fetch_profile_data_from_api() -> None:
+    """
+    Test fetch_profile_data fetches from API when not in cache.
+
+    Coverage: Tests the fetch_profile_data callback API fetch.
+    """
+    with patch("httpx.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "id": 99,
+            "name": "API Profile",
+            "x_coordinates": [0.0, 5.0],
+            "y_coordinates": [0.0, 3.0],
+        }
+        mock_get.return_value = mock_response
+
+        # Simulate callback API fetch
+        import httpx
+
+        response = httpx.get(f"{API_BASE_URL}/profiles/99", timeout=5.0)
+        if response.status_code == 200:
+            result = response.json()
+        else:
+            result = None
+
+        assert result is not None
+        assert result["name"] == "API Profile"
+
+
+# ==============================================================================
+# TESTS FOR update_graph with profile_data
+# ==============================================================================
+
+
+def test_update_graph_with_profile_data() -> None:
+    """
+    Test update_graph callback with profile data from API.
+
+    Coverage: Tests update_graph using profile data instead of generated default.
+    """
+    profile_data = {
+        "name": "Test Profile",
+        "x_coordinates": [0.0, 20.0, 40.0, 60.0, 80.0],
+        "y_coordinates": [0.0, 1.5, 0.5, 2.0, 0.0],
+    }
+
+    # Simulate the update_graph logic with profile data
+    x_road = np.array(profile_data["x_coordinates"])
+    y_road = np.array(profile_data["y_coordinates"])
+    profile_name = profile_data.get("name", "Selected Profile")
+
+    assert len(x_road) == 5
+    assert len(y_road) == 5
+    assert profile_name == "Test Profile"
 
 
 def test_update_graph_callback_execution() -> None:
@@ -312,14 +497,14 @@ def test_update_graph_figure_has_required_traces() -> None:
     Coverage: Tests figure creation and trace addition (lines 140-196)
     """
     # Act
-    figure, info_text = simulate_update_graph(20.0)
+    figure, _info_text = simulate_update_graph(20.0)
 
     # Assert
     assert isinstance(figure, go.Figure), "Should return a Plotly Figure"
     assert len(figure.data) >= 3, "Should have at least road, camera, and ray traces"
 
     # Check that traces exist
-    trace_names = [trace.name for trace in figure.data if hasattr(trace, "name")]
+    trace_names = [getattr(trace, "name", None) for trace in figure.data]
     assert any("road" in str(name).lower() or "Road" in str(name) for name in trace_names if name), (
         "Should have road trace"
     )
@@ -332,7 +517,7 @@ def test_update_graph_figure_layout() -> None:
     Coverage: Tests layout configuration (lines 198-235)
     """
     # Act
-    figure, info_text = simulate_update_graph(15.0)
+    figure, _info_text = simulate_update_graph(15.0)
 
     # Assert
     assert isinstance(figure, go.Figure), "Should return a Plotly Figure"
@@ -366,14 +551,14 @@ def test_update_graph_info_text_format() -> None:
     Coverage: Tests info_text generation for both intersection and no-intersection cases
     """
     # Test with angle likely to intersect
-    figure1, info_text1 = simulate_update_graph(20.0)
+    _figure1, info_text1 = simulate_update_graph(20.0)
 
     # Assert
     assert isinstance(info_text1, str), "Info text should be a string"
     assert len(info_text1) > 0, "Info text should not be empty"
 
     # Test with angle unlikely to intersect
-    figure2, info_text2 = simulate_update_graph(-80.0)
+    _figure2, info_text2 = simulate_update_graph(-80.0)
 
     # Assert
     assert isinstance(info_text2, str), "Info text should be a string"

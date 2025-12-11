@@ -10,10 +10,14 @@ Test Coverage:
 - PUT /profiles/{id}: Update profile
 - DELETE /profiles/{id}: Delete profile
 - Error cases: 404, 409, 422
+- Dependencies: get_db function
 """
+
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, SQLModel, create_engine
 
 from road_profile_viewer.api.dependencies import get_db
@@ -332,3 +336,109 @@ class TestDeleteProfile:
         # List should have 2 profiles
         list_response = client.get("/profiles")
         assert len(list_response.json()) == 2
+
+
+class TestGetDbDependency:
+    """Tests for the get_db dependency function."""
+
+    def test_get_db_yields_session(self, test_engine) -> None:
+        """Test that get_db yields a database session."""
+        with patch("road_profile_viewer.api.dependencies.get_engine", return_value=test_engine):
+            gen = get_db()
+            session = next(gen)
+            assert isinstance(session, Session)
+            # Clean up generator
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    def test_get_db_session_is_usable(self, test_engine) -> None:
+        """Test that the yielded session can be used for queries."""
+        with patch("road_profile_viewer.api.dependencies.get_engine", return_value=test_engine):
+            gen = get_db()
+            session = next(gen)
+            # Should be able to execute queries
+            from road_profile_viewer.database import crud
+
+            profiles = crud.get_all_profiles(session)
+            assert isinstance(profiles, list)
+            # Clean up generator
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+
+class TestIntegrityErrorHandling:
+    """Tests for IntegrityError handling in routes (race condition paths)."""
+
+    def test_create_profile_integrity_error_race_condition(self, client, test_engine) -> None:
+        """Test that IntegrityError during create returns 409."""
+        # Mock create_profile to raise IntegrityError (simulating race condition)
+        with patch("road_profile_viewer.api.routes.crud.create_profile") as mock_create:
+            mock_create.side_effect = IntegrityError(
+                statement="INSERT",
+                params={},
+                orig=Exception("UNIQUE constraint failed"),
+            )
+            # Also mock get_profile_by_name to return None (check passes)
+            with patch("road_profile_viewer.api.routes.crud.get_profile_by_name") as mock_get:
+                mock_get.return_value = None
+
+                profile_data = {
+                    "name": "race_condition_test",
+                    "x_coordinates": [0.0, 1.0],
+                    "y_coordinates": [0.0, 1.0],
+                }
+                response = client.post("/profiles", json=profile_data)
+
+                # Should return 409 Conflict
+                assert response.status_code == 409
+                assert "already exists" in response.json()["detail"]
+
+    def test_update_profile_integrity_error_race_condition(self, client, sample_profile_data) -> None:
+        """Test that IntegrityError during update returns 409."""
+        # First create a profile
+        create_response = client.post("/profiles", json=sample_profile_data)
+        profile_id = create_response.json()["id"]
+
+        # Mock update_profile to raise IntegrityError
+        with patch("road_profile_viewer.api.routes.crud.update_profile") as mock_update:
+            mock_update.side_effect = IntegrityError(
+                statement="UPDATE",
+                params={},
+                orig=Exception("UNIQUE constraint failed"),
+            )
+
+            updated_data = {
+                "name": "race_name",
+                "x_coordinates": [0.0, 1.0],
+                "y_coordinates": [0.0, 1.0],
+            }
+            response = client.put(f"/profiles/{profile_id}", json=updated_data)
+
+            # Should return 409 Conflict
+            assert response.status_code == 409
+            assert "already exists" in response.json()["detail"]
+
+    def test_update_profile_returns_none_race_condition(self, client, sample_profile_data) -> None:
+        """Test when update_profile returns None (profile deleted during update)."""
+        # First create a profile
+        create_response = client.post("/profiles", json=sample_profile_data)
+        profile_id = create_response.json()["id"]
+
+        # Mock update_profile to return None (profile was deleted)
+        with patch("road_profile_viewer.api.routes.crud.update_profile") as mock_update:
+            mock_update.return_value = None
+
+            updated_data = {
+                "name": sample_profile_data["name"],
+                "x_coordinates": [0.0, 1.0],
+                "y_coordinates": [0.0, 1.0],
+            }
+            response = client.put(f"/profiles/{profile_id}", json=updated_data)
+
+            # Should return 404 Not Found
+            assert response.status_code == 404
+            assert "not found" in response.json()["detail"]

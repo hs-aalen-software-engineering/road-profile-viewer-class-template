@@ -221,3 +221,68 @@ class TestResetEngine:
         # They should be different objects after reset
         # (Both are new engines, not the cached one)
         assert engine1 is not engine2
+
+
+class TestDefaultEngineUsage:
+    """Tests for functions using the default engine (no explicit engine passed)."""
+
+    def test_create_db_and_tables_with_default_engine(self, tmp_path, monkeypatch) -> None:
+        """
+        Test that create_db_and_tables() uses the default engine when none provided.
+
+        This covers line 62 in connection.py.
+        """
+        import road_profile_viewer.database.connection as conn_module
+
+        # Reset any cached engine
+        reset_engine()
+
+        # Temporarily override the default path to use temp directory
+        temp_db = tmp_path / "default_test.db"
+        monkeypatch.setattr(conn_module, "DEFAULT_DATABASE_PATH", temp_db)
+
+        # Call without engine - should use default
+        create_db_and_tables()
+
+        # Verify table was created by checking we can query
+        default_engine = get_engine()
+        with Session(default_engine) as session:
+            statement = select(RoadProfileDB)
+            result = session.exec(statement).all()
+            assert isinstance(result, list)
+
+        # Cleanup
+        reset_engine()
+
+    def test_get_session_with_default_engine(self, tmp_path, monkeypatch) -> None:
+        """
+        Test that get_session() uses the default engine when none provided.
+
+        This covers line 85 in connection.py.
+        """
+        import road_profile_viewer.database.connection as conn_module
+
+        # Reset any cached engine
+        reset_engine()
+
+        # Temporarily override the default path to use temp directory
+        temp_db = tmp_path / "session_test.db"
+        monkeypatch.setattr(conn_module, "DEFAULT_DATABASE_PATH", temp_db)
+
+        # Create tables first
+        create_db_and_tables()
+
+        # Get session without engine - should use default
+        session_gen = get_session()
+        session = next(session_gen)
+
+        assert isinstance(session, Session)
+
+        # Cleanup generator
+        try:
+            next(session_gen)
+        except StopIteration:
+            pass
+
+        # Cleanup
+        reset_engine()

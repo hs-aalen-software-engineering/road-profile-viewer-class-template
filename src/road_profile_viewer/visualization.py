@@ -436,7 +436,7 @@ def create_dash_app() -> Dash:
                 "y_coordinates": data["y_coordinates"],
             }
 
-            response = httpx.post(f"{API_BASE_URL}/profiles", json=profile_data, timeout=5.0)
+            response = httpx.post(f"{API_BASE_URL}/profiles/", json=profile_data, timeout=5.0)
 
             if response.status_code == 201:
                 return (
@@ -475,13 +475,14 @@ def create_dash_app() -> Dash:
         Output("profile-dropdown", "options"),
         Output("profiles-store", "data"),
         Input("refresh-button", "n_clicks"),
+        Input("url", "pathname"),
     )
-    def load_profiles(n_clicks: int) -> tuple[list[dict], list[dict]]:  # pyright: ignore[reportUnusedFunction]
-        """Load available profiles from the API."""
+    def load_profiles(n_clicks: int, pathname: str | None) -> tuple[list[dict], list[dict]]:  # pyright: ignore[reportUnusedFunction]
+        """Load available profiles from the API. Triggers on page load and refresh button."""
         import httpx
 
         try:
-            response = httpx.get(f"{API_BASE_URL}/profiles", timeout=5.0)
+            response = httpx.get(f"{API_BASE_URL}/profiles/", timeout=5.0)
             if response.status_code == 200:
                 profiles = response.json()
                 options = [{"label": p["name"], "value": p["id"]} for p in profiles]

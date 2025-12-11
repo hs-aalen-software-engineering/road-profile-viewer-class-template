@@ -26,7 +26,7 @@ TinyDB approach:
 The structure below is ONE possible implementation. Feel free to improve it!
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class RoadProfile(BaseModel):
@@ -92,7 +92,7 @@ class RoadProfile(BaseModel):
 
     @field_validator("y_coordinates")
     @classmethod
-    def validate_coordinates_same_length(cls, v: list[float], info) -> list[float]:
+    def validate_coordinates_same_length(cls, v: list[float], info: ValidationInfo) -> list[float]:
         """
         Ensure x and y coordinate lists have the same length.
 

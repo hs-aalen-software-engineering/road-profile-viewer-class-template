@@ -5,6 +5,9 @@ This module contains the Dash application UI components and callbacks for
 the interactive road profile viewer.
 """
 
+import base64
+import json
+
 import numpy as np
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, State, dcc, html
@@ -16,20 +19,139 @@ from road_profile_viewer.road import generate_road_profile
 API_BASE_URL = "http://127.0.0.1:8000"
 
 
-def create_dash_app() -> Dash:
-    """
-    Create and configure the Dash application.
+def create_upload_layout() -> html.Div:
+    """Create the upload page layout."""
+    return html.Div(
+        [
+            html.H1(
+                "Upload Road Profile",
+                style={"textAlign": "center", "color": "#2c3e50", "marginBottom": "20px"},
+            ),
+            html.Div(
+                [
+                    dcc.Link(
+                        "< Back to Viewer",
+                        href="/",
+                        style={
+                            "color": "#3498db",
+                            "textDecoration": "none",
+                            "fontWeight": "bold",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "20px"},
+            ),
+            # Upload component
+            html.Div(
+                [
+                    dcc.Upload(
+                        id="upload-json",
+                        children=html.Div([
+                            "Drag and Drop or ",
+                            html.A("Select a JSON File", style={"color": "#3498db"}),
+                        ]),
+                        style={
+                            "width": "100%",
+                            "height": "100px",
+                            "lineHeight": "100px",
+                            "borderWidth": "2px",
+                            "borderStyle": "dashed",
+                            "borderRadius": "10px",
+                            "textAlign": "center",
+                            "backgroundColor": "#f8f9fa",
+                            "cursor": "pointer",
+                        },
+                        accept=".json",
+                        multiple=False,
+                    ),
+                ],
+                style={"marginBottom": "20px"},
+            ),
+            # Profile name input
+            html.Div(
+                [
+                    html.Label(
+                        "Profile Name:",
+                        style={"fontWeight": "bold", "marginRight": "10px"},
+                    ),
+                    dcc.Input(
+                        id="profile-name-input",
+                        type="text",
+                        placeholder="Enter profile name...",
+                        style={
+                            "width": "300px",
+                            "padding": "8px",
+                            "marginRight": "10px",
+                        },
+                    ),
+                    html.Button(
+                        "Save Profile",
+                        id="save-button",
+                        n_clicks=0,
+                        style={
+                            "padding": "8px 20px",
+                            "backgroundColor": "#27ae60",
+                            "color": "white",
+                            "border": "none",
+                            "borderRadius": "5px",
+                            "cursor": "pointer",
+                        },
+                    ),
+                ],
+                style={"marginBottom": "20px"},
+            ),
+            # Status message
+            html.Div(
+                id="upload-status",
+                style={
+                    "marginBottom": "20px",
+                    "padding": "10px",
+                    "borderRadius": "5px",
+                },
+            ),
+            # Preview graph
+            html.Div(
+                [
+                    html.H3("Preview:", style={"color": "#2c3e50"}),
+                    dcc.Graph(id="preview-graph", style={"height": "400px"}),
+                ],
+                style={
+                    "padding": "20px",
+                    "backgroundColor": "#ecf0f1",
+                    "borderRadius": "5px",
+                },
+            ),
+            # Store for parsed upload data
+            dcc.Store(id="parsed-upload-data"),
+            # Instructions
+            html.Div(
+                [
+                    html.H3("JSON Format:", style={"color": "#2c3e50"}),
+                    html.Pre(
+                        """{
+    "name": "My Profile",
+    "x_coordinates": [0.0, 10.0, 20.0, 30.0],
+    "y_coordinates": [0.0, 1.5, 2.0, 1.0]
+}""",
+                        style={
+                            "backgroundColor": "#2c3e50",
+                            "color": "#ecf0f1",
+                            "padding": "15px",
+                            "borderRadius": "5px",
+                            "overflow": "auto",
+                        },
+                    ),
+                ],
+                style={"marginTop": "20px"},
+            ),
+        ],
+        style={"maxWidth": "800px", "margin": "0 auto", "padding": "20px"},
+    )
 
-    Returns:
-    --------
-    Dash
-        Configured Dash application instance
-    """
-    # Initialize the Dash app
-    app = Dash(__name__)
 
-    # Define the layout
-    app.layout = html.Div([
+def create_home_layout() -> html.Div:
+    """Create the home page layout (main viewer)."""
+    return html.Div([
         # Store for caching profile data
         dcc.Store(id="profiles-store"),
         dcc.Store(id="selected-profile-data"),
@@ -133,25 +255,229 @@ def create_dash_app() -> Dash:
         ),
     ])
 
+
+def create_dash_app() -> Dash:
+    """
+    Create and configure the Dash application.
+
+    Returns:
+    --------
+    Dash
+        Configured Dash application instance
+    """
+    # Initialize the Dash app with URL routing support
+    app = Dash(__name__, suppress_callback_exceptions=True)
+
+    # Define the main layout with URL routing
+    app.layout = html.Div([
+        dcc.Location(id="url", refresh=False),
+        html.Div(id="page-content"),
+    ])
+
+    # Page routing callback
+    @app.callback(Output("page-content", "children"), Input("url", "pathname"))
+    def display_page(pathname: str | None) -> html.Div:  # pyright: ignore[reportUnusedFunction]
+        """Route to the appropriate page based on URL."""
+        if pathname == "/upload":
+            return create_upload_layout()
+        return create_home_layout()
+
+    # Upload page callbacks
+    @app.callback(
+        Output("parsed-upload-data", "data"),
+        Output("profile-name-input", "value"),
+        Output("upload-status", "children"),
+        Output("upload-status", "style"),
+        Input("upload-json", "contents"),
+        State("upload-json", "filename"),
+        prevent_initial_call=True,
+    )
+    def parse_upload(  # pyright: ignore[reportUnusedFunction]
+        contents: str | None,
+        filename: str | None,
+    ) -> tuple[dict | None, str, str, dict]:
+        """Parse uploaded JSON file and show preview."""
+        if contents is None:
+            return None, "", "", {"display": "none"}
+
+        try:
+            # Decode base64 content
+            content_type, content_string = contents.split(",")
+            decoded = base64.b64decode(content_string)
+            data = json.loads(decoded.decode("utf-8"))
+
+            # Validate structure
+            if "x_coordinates" not in data or "y_coordinates" not in data:
+                return (
+                    None,
+                    "",
+                    "Error: JSON must contain 'x_coordinates' and 'y_coordinates'",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+
+            if len(data["x_coordinates"]) != len(data["y_coordinates"]):
+                return (
+                    None,
+                    "",
+                    "Error: x_coordinates and y_coordinates must have the same length",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+
+            if len(data["x_coordinates"]) < 2:
+                return (
+                    None,
+                    "",
+                    "Error: Profile must have at least 2 points",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+
+            # Use filename or provided name as default
+            default_name = data.get("name", filename.replace(".json", "") if filename else "Uploaded Profile")
+
+            return (
+                data,
+                default_name,
+                f"File '{filename}' loaded successfully. Review the preview and click 'Save Profile'.",
+                {"backgroundColor": "#27ae60", "color": "white", "padding": "10px"},
+            )
+        except json.JSONDecodeError:
+            return (
+                None,
+                "",
+                "Error: Invalid JSON format",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+        except Exception as e:
+            return (
+                None,
+                "",
+                f"Error parsing file: {e!s}",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+
+    @app.callback(
+        Output("preview-graph", "figure"),
+        Input("parsed-upload-data", "data"),
+    )
+    def update_preview(data: dict | None) -> go.Figure:  # pyright: ignore[reportUnusedFunction]
+        """Update the preview graph with uploaded data."""
+        fig = go.Figure()
+
+        if data is None:
+            # Empty preview
+            fig.update_layout(
+                title="Upload a JSON file to preview",
+                xaxis_title="X Position (m)",
+                yaxis_title="Y Position (m)",
+                plot_bgcolor="#f8f9fa",
+            )
+            return fig
+
+        x_coords = data.get("x_coordinates", [])
+        y_coords = data.get("y_coordinates", [])
+
+        fig.add_trace(
+            go.Scatter(
+                x=x_coords,
+                y=y_coords,
+                mode="lines+markers",
+                name="Road Profile",
+                line={"color": "#4a4a4a", "width": 3},
+                marker={"size": 6, "color": "#4a4a4a"},
+            )
+        )
+
+        fig.update_layout(
+            title="Preview: Road Profile",
+            xaxis_title="X Position (m)",
+            yaxis_title="Y Position (m)",
+            plot_bgcolor="#f8f9fa",
+            xaxis={"gridcolor": "#dee2e6"},
+            yaxis={"gridcolor": "#dee2e6", "scaleanchor": "x", "scaleratio": 1},
+        )
+
+        return fig
+
+    @app.callback(
+        Output("upload-status", "children", allow_duplicate=True),
+        Output("upload-status", "style", allow_duplicate=True),
+        Input("save-button", "n_clicks"),
+        State("parsed-upload-data", "data"),
+        State("profile-name-input", "value"),
+        prevent_initial_call=True,
+    )
+    def save_profile(  # pyright: ignore[reportUnusedFunction]
+        n_clicks: int,
+        data: dict | None,
+        name: str | None,
+    ) -> tuple[str, dict]:
+        """Save the profile to the database via API."""
+        if n_clicks == 0:
+            return "", {"display": "none"}
+
+        if data is None:
+            return (
+                "Please upload a valid JSON file first",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+
+        if not name or not name.strip():
+            return (
+                "Please enter a profile name",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+
+        import httpx
+
+        try:
+            profile_data = {
+                "name": name.strip(),
+                "x_coordinates": data["x_coordinates"],
+                "y_coordinates": data["y_coordinates"],
+            }
+
+            response = httpx.post(f"{API_BASE_URL}/profiles", json=profile_data, timeout=5.0)
+
+            if response.status_code == 201:
+                return (
+                    f"Profile '{name}' saved successfully! Go back to the viewer to use it.",
+                    {"backgroundColor": "#27ae60", "color": "white", "padding": "10px"},
+                )
+            elif response.status_code == 409:
+                return (
+                    f"Error: A profile with name '{name}' already exists",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+            elif response.status_code == 422:
+                error_detail = response.json().get("detail", "Validation error")
+                return (
+                    f"Validation error: {error_detail}",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+            else:
+                return (
+                    f"Error: Server returned status {response.status_code}",
+                    {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+                )
+        except httpx.ConnectError:
+            return (
+                "Error: Cannot connect to API server. Is it running?",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+        except Exception as e:
+            return (
+                f"Error saving profile: {e!s}",
+                {"backgroundColor": "#e74c3c", "color": "white", "padding": "10px"},
+            )
+
+    # Home page callbacks (load_profiles, fetch_profile_data, update_graph)
     @app.callback(
         Output("profile-dropdown", "options"),
         Output("profiles-store", "data"),
         Input("refresh-button", "n_clicks"),
     )
     def load_profiles(n_clicks: int) -> tuple[list[dict], list[dict]]:  # pyright: ignore[reportUnusedFunction]
-        """
-        Load available profiles from the API.
-
-        Parameters:
-        -----------
-        n_clicks : int
-            Number of times refresh button was clicked (triggers callback)
-
-        Returns:
-        --------
-        tuple
-            (dropdown options, profiles data)
-        """
+        """Load available profiles from the API."""
         import httpx
 
         try:
@@ -177,21 +503,7 @@ def create_dash_app() -> Dash:
         profile_id: str | int | None,
         profiles_cache: list[dict] | None,
     ) -> dict | None:  # pyright: ignore[reportUnusedFunction]
-        """
-        Fetch the selected profile data.
-
-        Parameters:
-        -----------
-        profile_id : str | int | None
-            Selected profile ID (or "default")
-        profiles_cache : list[dict] | None
-            Cached profiles from store
-
-        Returns:
-        --------
-        dict | None
-            Profile data or None for default
-        """
+        """Fetch the selected profile data."""
         if profile_id is None or profile_id == "default":
             return None
 
@@ -228,21 +540,7 @@ def create_dash_app() -> Dash:
         angle: float | None,
         profile_data: dict | None,
     ) -> tuple[go.Figure, str]:  # pyright: ignore[reportUnusedFunction]
-        """
-        Update the graph based on the input angle and selected profile.
-
-        Parameters:
-        -----------
-        angle : float
-            Camera ray angle in degrees
-        profile_data : dict | None
-            Selected profile data from API (or None for default)
-
-        Returns:
-        --------
-        tuple
-            (plotly figure, info text)
-        """
+        """Update the graph based on the input angle and selected profile."""
         if angle is None:
             angle = -1.1
 
@@ -320,7 +618,7 @@ def create_dash_app() -> Dash:
                 x=x_ray,
                 y=y_ray,
                 mode="lines",
-                name=f"Camera Ray ({angle}°)",
+                name=f"Camera Ray ({angle})",
                 line={"color": "blue", "width": 2, "dash": "dash"},
                 hovertemplate="Camera Ray<br>x: %{x:.2f}<br>y: %{y:.2f}<extra></extra>",
             )

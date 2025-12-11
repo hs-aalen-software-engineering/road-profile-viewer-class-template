@@ -11,7 +11,7 @@ Test Coverage:
 import pytest
 from sqlmodel import Session
 
-from road_profile_viewer.database.connection import create_db_and_tables, get_engine
+from road_profile_viewer.database.connection import create_db_and_tables, get_engine, reset_engine
 from road_profile_viewer.database.crud import get_all_profiles, get_profile_by_name
 from road_profile_viewer.database.seed import (
     DEFAULT_PROFILE_NAME,
@@ -184,3 +184,39 @@ class TestDefaultProfileName:
         """
         # Should contain meaningful words
         assert "profile" in DEFAULT_PROFILE_NAME.lower() or "clothoid" in DEFAULT_PROFILE_NAME.lower()
+
+
+class TestSeedModuleScript:
+    """Tests for running seed module as a script."""
+
+    def test_seed_module_main_block_via_runpy(self, tmp_path, monkeypatch, capsys) -> None:
+        """
+        Test that running seed.py as __main__ initializes the database.
+
+        This tests lines 78-80 (if __name__ == "__main__" block).
+        """
+        import runpy
+
+        import road_profile_viewer.database.connection as conn_module
+
+        # Reset any cached engine
+        reset_engine()
+
+        # Override the default database path to use temp directory
+        temp_db = tmp_path / "runpy_test.db"
+        monkeypatch.setattr(conn_module, "DEFAULT_DATABASE_PATH", temp_db)
+
+        # Run the module as __main__ using runpy
+        # This executes the if __name__ == "__main__" block
+        runpy.run_module("road_profile_viewer.database.seed", run_name="__main__")
+
+        # Verify output contains the expected messages
+        captured = capsys.readouterr()
+        assert "Initializing database" in captured.out
+        assert "initialized" in captured.out
+
+        # Verify database was created
+        assert temp_db.exists()
+
+        # Cleanup
+        reset_engine()

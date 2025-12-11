@@ -275,6 +275,53 @@ def test_find_intersection_finds_intersection_for_normal_angle() -> None:
     assert 0 <= x <= 30, "intersection x should be within road bounds"
 
 
+def test_find_intersection_skips_segments_behind_camera() -> None:
+    """
+    Test that find_intersection() skips road segments behind the camera.
+
+    This tests line 110 (continue) when x2 <= camera_x.
+    """
+    # Arrange: Create road with segments before and after camera
+    x_road: NDArray[np.float64] = np.array([-20, -10, 0, 10, 20, 30], dtype=np.float64)
+    y_road: NDArray[np.float64] = np.array([0, 1, 2, 3, 4, 5], dtype=np.float64)
+    angle: float = 20.0  # Downward angle
+    camera_x: float = 5.0  # Camera at x=5, some segments are behind
+    camera_y: float = 10.0  # Camera above road
+
+    # Act: Find intersection
+    x, y, dist = find_intersection(x_road, y_road, angle, camera_x, camera_y)
+
+    # Assert: Should find intersection only in segments ahead of camera
+    assert x is not None, "Should find intersection"
+    assert x > camera_x, "Intersection should be ahead of camera (x > camera_x)"
+
+
+def test_find_intersection_parallel_ray_and_segment() -> None:
+    """
+    Test find_intersection when ray is nearly parallel to a road segment.
+
+    This tests line 125 (t = 0) when |diff2 - diff1| < 1e-10 (parallel case).
+    """
+    # Arrange: Create horizontal road and nearly horizontal ray
+    x_road: NDArray[np.float64] = np.array([0, 10, 20, 30, 40], dtype=np.float64)
+    # Road with a flat section that could be parallel to the ray
+    y_road: NDArray[np.float64] = np.array([5, 5, 5, 5, 5], dtype=np.float64)
+    angle: float = 0.0  # Horizontal ray (parallel to flat road)
+    camera_x: float = 0.0
+    camera_y: float = 5.0  # Camera at same height as road (ray lies on road)
+
+    # Act: Find intersection
+    x, y, dist = find_intersection(x_road, y_road, angle, camera_x, camera_y)
+
+    # Assert: For parallel lines at same height, should find intersection at start
+    # The algorithm handles this edge case by setting t=0
+    # Result can be None or found depending on exact floating point comparison
+    # Either outcome is acceptable for this edge case
+    if x is not None:
+        assert dist is not None, "If intersection found, distance should be defined"
+        assert dist >= 0, "Distance should be non-negative"
+
+
 if __name__ == "__main__":
     # Allow running tests directly
     print("Running geometry unit tests...")

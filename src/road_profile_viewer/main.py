@@ -46,8 +46,10 @@ def main() -> None:
     print("=" * 60)
 
     # Create and run Dash app on main thread
+    # Note: use_reloader=False prevents Werkzeug from spawning a second process
+    # which would cause port 8000 conflict with the FastAPI server
     dash_app = create_dash_app()
-    dash_app.run(debug=False, port=8050)
+    dash_app.run(debug=True, port=8050, use_reloader=False)
 
 
 if __name__ == "__main__":

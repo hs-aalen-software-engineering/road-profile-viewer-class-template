@@ -11,8 +11,10 @@ from pathlib import Path
 from sqlalchemy import Engine
 from sqlmodel import Session, SQLModel, create_engine
 
-# Default database path - can be overridden for testing
-DEFAULT_DATABASE_PATH = Path("road_profiles.db")
+# Default database path - use absolute path relative to project root
+# This ensures the database is always in the same location regardless of working directory
+_PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+DEFAULT_DATABASE_PATH = _PROJECT_ROOT / "road_profiles.db"
 
 # Module-level engine (lazy initialization)
 _engine: Engine | None = None

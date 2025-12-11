@@ -44,7 +44,7 @@ def test_main_creates_and_runs_app() -> None:
                 assert mock_print.call_count >= 2, "Should print startup messages"
 
                 # Verify Dash app.run was called with correct parameters
-                mock_dash_app.run.assert_called_once_with(debug=False, port=8050)
+                mock_dash_app.run.assert_called_once_with(debug=True, port=8050, use_reloader=False)
 
 
 def test_run_fastapi() -> None:

@@ -49,6 +49,7 @@ htmlcov/
 coverage.xml
 coverage.json
 *.cover
+reports/
 
 # Database files (student implementations)
 *.db

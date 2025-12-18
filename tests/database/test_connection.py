@@ -11,6 +11,7 @@ Test Coverage:
 - reset_engine(): Engine cache reset
 """
 
+import pytest
 from sqlmodel import Session, SQLModel, select
 
 from road_profile_viewer.database.connection import (
@@ -22,8 +23,12 @@ from road_profile_viewer.database.connection import (
 from road_profile_viewer.database.models import RoadProfileDB
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetEngine:
-    """Tests for the get_engine() function."""
+    """Tests for the get_engine() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_engine_returns_engine(self) -> None:
         """
@@ -79,8 +84,12 @@ class TestGetEngine:
         # Echo setting should be True (difficult to verify directly)
 
 
+@pytest.mark.requirement("FR-006")
 class TestCreateDbAndTables:
-    """Tests for the create_db_and_tables() function."""
+    """Tests for the create_db_and_tables() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_create_db_and_tables_creates_road_profiles_table(self) -> None:
         """
@@ -101,10 +110,12 @@ class TestCreateDbAndTables:
             assert result is not None
             assert result.name == "test"
 
+    @pytest.mark.requirement("NFR-005")
     def test_create_db_and_tables_idempotent(self) -> None:
         """
         Test that create_db_and_tables() can be called multiple times safely.
 
+        Requirement: NFR-005 - Database operations shall be idempotent
         Equivalence class: Idempotent operation
         """
         engine = get_engine(":memory:")
@@ -121,8 +132,12 @@ class TestCreateDbAndTables:
             assert result == []
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetSession:
-    """Tests for the get_session() function."""
+    """Tests for the get_session() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_session_yields_session(self) -> None:
         """
@@ -198,8 +213,15 @@ class TestGetSession:
         # This is implementation-dependent, but the session should be unusable
 
 
+@pytest.mark.requirement("FR-006")
+@pytest.mark.requirement("REQ-DB-007")
 class TestResetEngine:
-    """Tests for the reset_engine() function."""
+    """Tests for the reset_engine() function.
+
+    Requirements:
+    - FR-006: Persist profiles in database
+    - REQ-DB-007: Database engine creation shall be cached
+    """
 
     def test_reset_engine_clears_cache(self) -> None:
         """
@@ -223,8 +245,12 @@ class TestResetEngine:
         assert engine1 is not engine2
 
 
+@pytest.mark.requirement("FR-006")
 class TestDefaultEngineUsage:
-    """Tests for functions using the default engine (no explicit engine passed)."""
+    """Tests for functions using the default engine (no explicit engine passed).
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_create_db_and_tables_with_default_engine(self, tmp_path, monkeypatch) -> None:
         """

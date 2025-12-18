@@ -9,11 +9,20 @@ Test Coverage:
 
 import json
 
+import pytest
+
 from road_profile_viewer.database.models import RoadProfileDB
 
 
+@pytest.mark.requirement("FR-006")
+@pytest.mark.requirement("REQ-DB-006")
 class TestRoadProfileDB:
-    """Tests for the RoadProfileDB SQLModel."""
+    """Tests for the RoadProfileDB SQLModel.
+
+    Requirements:
+    - FR-006: Persist profiles in database
+    - REQ-DB-006: RoadProfileDB shall serialize/deserialize coordinates via JSON
+    """
 
     def test_create_profile_with_all_fields(self) -> None:
         """

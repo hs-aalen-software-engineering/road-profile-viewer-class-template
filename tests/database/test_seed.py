@@ -45,8 +45,12 @@ def empty_engine():
     return get_engine(":memory:")
 
 
+@pytest.mark.requirement("FR-009")
 class TestSeedDefaultProfile:
-    """Tests for the seed_default_profile() function."""
+    """Tests for the seed_default_profile() function.
+
+    Requirement: FR-009 - Seed default profile on first run
+    """
 
     def test_seed_default_profile_creates_profile(self, db_session) -> None:
         """
@@ -84,10 +88,15 @@ class TestSeedDefaultProfile:
         # y_coords should be reasonable values
         assert all(isinstance(y, float) for y in y_coords)
 
+    @pytest.mark.requirement("REQ-DB-008")
+    @pytest.mark.requirement("NFR-005")
     def test_seed_default_profile_is_idempotent(self, db_session) -> None:
         """
         Test that seed_default_profile() is idempotent (can be called multiple times).
 
+        Requirements:
+        - REQ-DB-008: seed_default_profile() shall be idempotent
+        - NFR-005: Database operations shall be idempotent
         Equivalence class: Idempotent operation
         """
         # First call should create
@@ -117,8 +126,12 @@ class TestSeedDefaultProfile:
         assert result is False
 
 
+@pytest.mark.requirement("FR-009")
 class TestInitializeDatabase:
-    """Tests for the initialize_database() function."""
+    """Tests for the initialize_database() function.
+
+    Requirement: FR-009 - Seed default profile on first run
+    """
 
     def test_initialize_database_creates_tables(self, empty_engine) -> None:
         """
@@ -146,10 +159,12 @@ class TestInitializeDatabase:
             profile = get_profile_by_name(session, DEFAULT_PROFILE_NAME)
             assert profile is not None
 
+    @pytest.mark.requirement("NFR-005")
     def test_initialize_database_is_idempotent(self, empty_engine) -> None:
         """
         Test that initialize_database() can be called multiple times safely.
 
+        Requirement: NFR-005 - Database operations shall be idempotent
         Equivalence class: Idempotent operation
         """
         # Call multiple times
@@ -164,8 +179,12 @@ class TestInitializeDatabase:
             assert len(default_profiles) == 1
 
 
+@pytest.mark.requirement("FR-009")
 class TestDefaultProfileName:
-    """Tests for the DEFAULT_PROFILE_NAME constant."""
+    """Tests for the DEFAULT_PROFILE_NAME constant.
+
+    Requirement: FR-009 - Seed default profile on first run
+    """
 
     def test_default_profile_name_is_non_empty(self) -> None:
         """
@@ -186,8 +205,12 @@ class TestDefaultProfileName:
         assert "profile" in DEFAULT_PROFILE_NAME.lower() or "clothoid" in DEFAULT_PROFILE_NAME.lower()
 
 
+@pytest.mark.requirement("FR-009")
 class TestSeedModuleScript:
-    """Tests for running seed module as a script."""
+    """Tests for running seed module as a script.
+
+    Requirement: FR-009 - Seed default profile on first run
+    """
 
     def test_seed_module_main_block_via_runpy(self, tmp_path, monkeypatch, capsys) -> None:
         """

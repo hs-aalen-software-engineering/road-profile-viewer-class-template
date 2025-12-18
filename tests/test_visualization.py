@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import plotly.graph_objects as go
+import pytest
 from dash import Dash
 
 from road_profile_viewer.geometry import find_intersection
@@ -26,10 +27,15 @@ from road_profile_viewer.visualization import API_BASE_URL, create_dash_app
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-001")
 def test_create_dash_app_returns_dash_instance() -> None:
     """
     Test that create_dash_app() returns a Dash application instance.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-001: Dash app shall have URL routing
     Equivalence class: Valid Dash app creation
     """
     # Act
@@ -40,10 +46,12 @@ def test_create_dash_app_returns_dash_instance() -> None:
     assert app.layout is not None, "App should have a layout"
 
 
+@pytest.mark.requirement("FR-001")
 def test_create_dash_app_has_title() -> None:
     """
     Test that the Dash app layout includes a title.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     Coverage: Tests layout creation (line 29-87)
     """
     # Act
@@ -55,10 +63,15 @@ def test_create_dash_app_has_title() -> None:
     assert hasattr(app.layout, "children"), "Layout should have children"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_create_dash_app_callback_registered() -> None:
     """
     Test that the update_graph callback is registered.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Coverage: Tests callback registration (line 90-96)
     """
     # Act
@@ -70,10 +83,12 @@ def test_create_dash_app_callback_registered() -> None:
     assert len(app.callback_map) > 0, "App should have at least one callback registered"
 
 
+@pytest.mark.requirement("FR-001")
 def test_create_dash_app_has_multiple_callbacks() -> None:
     """
     Test that the Dash app has all required callbacks registered.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     Coverage: Tests that load_profiles, fetch_profile_data, and update_graph callbacks exist.
     """
     # Act
@@ -83,10 +98,12 @@ def test_create_dash_app_has_multiple_callbacks() -> None:
     assert len(app.callback_map) >= 3, "App should have at least 3 callbacks registered"
 
 
+@pytest.mark.requirement("FR-007")
 def test_api_base_url_configured() -> None:
     """
     Test that API_BASE_URL is properly configured.
 
+    Requirement: FR-007 - Provide REST API for profile management
     Coverage: Tests API_BASE_URL constant.
     """
     assert API_BASE_URL == "http://127.0.0.1:8000", "API_BASE_URL should be configured"
@@ -97,10 +114,15 @@ def test_api_base_url_configured() -> None:
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-004")
+@pytest.mark.requirement("REQ-VIS-004")
 def test_load_profiles_api_success() -> None:
     """
     Test load_profiles callback when API returns profiles.
 
+    Requirements:
+    - FR-004: Allow profile selection from dropdown
+    - REQ-VIS-004: Profile dropdown shall refresh from API
     Coverage: Tests the load_profiles callback logic with successful API response.
     """
     mock_profiles = [
@@ -128,10 +150,15 @@ def test_load_profiles_api_success() -> None:
             assert options[1]["label"] == "Profile 1"
 
 
+@pytest.mark.requirement("FR-004")
+@pytest.mark.requirement("REQ-VIS-004")
 def test_load_profiles_api_failure() -> None:
     """
     Test load_profiles callback when API is unavailable.
 
+    Requirements:
+    - FR-004: Allow profile selection from dropdown
+    - REQ-VIS-004: Profile dropdown shall refresh from API
     Coverage: Tests the load_profiles callback fallback when API fails.
     """
     with patch("httpx.get") as mock_get:
@@ -155,10 +182,12 @@ def test_load_profiles_api_failure() -> None:
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-004")
 def test_fetch_profile_data_default_returns_none() -> None:
     """
     Test fetch_profile_data returns None for default profile.
 
+    Requirement: FR-004 - Allow profile selection from dropdown
     Coverage: Tests the fetch_profile_data callback with "default" selection.
     """
     # Simulate callback logic
@@ -171,10 +200,12 @@ def test_fetch_profile_data_default_returns_none() -> None:
     assert result is None
 
 
+@pytest.mark.requirement("FR-004")
 def test_fetch_profile_data_from_cache() -> None:
     """
     Test fetch_profile_data retrieves from cache when available.
 
+    Requirement: FR-004 - Allow profile selection from dropdown
     Coverage: Tests the fetch_profile_data callback cache lookup.
     """
     profiles_cache = [
@@ -195,10 +226,12 @@ def test_fetch_profile_data_from_cache() -> None:
     assert result["name"] == "Profile 1"
 
 
+@pytest.mark.requirement("FR-004")
 def test_fetch_profile_data_from_api() -> None:
     """
     Test fetch_profile_data fetches from API when not in cache.
 
+    Requirement: FR-004 - Allow profile selection from dropdown
     Coverage: Tests the fetch_profile_data callback API fetch.
     """
     with patch("httpx.get") as mock_get:
@@ -230,10 +263,15 @@ def test_fetch_profile_data_from_api() -> None:
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_profile_data() -> None:
     """
     Test update_graph callback with profile data from API.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Coverage: Tests update_graph using profile data instead of generated default.
     """
     profile_data = {
@@ -252,10 +290,15 @@ def test_update_graph_with_profile_data() -> None:
     assert profile_name == "Test Profile"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_callback_execution() -> None:
     """
     Test actual execution of the callback to achieve code coverage.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     This test executes the actual callback code in visualization.py to achieve 100% coverage.
     """
     # Create the app
@@ -414,10 +457,15 @@ def simulate_update_graph(angle: float | None) -> tuple[go.Figure, str]:
     return fig, info_text
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_none_angle() -> None:
     """
     Test update_graph logic when angle input is None.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Equivalence class: None angle input
     Branch coverage: Tests None angle handling (line 111-112)
     """
@@ -429,10 +477,15 @@ def test_update_graph_with_none_angle() -> None:
     assert isinstance(info_text, str), "Should return info text"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_positive_angle_intersection() -> None:
     """
     Test update_graph logic with positive angle that finds intersection.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Equivalence class: Positive angles with intersection
     Branch coverage: Tests intersection found branch (line 124, 189)
     """
@@ -445,10 +498,15 @@ def test_update_graph_with_positive_angle_intersection() -> None:
     assert len(figure.data) >= 3, "Should have at least road, camera, and ray traces"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_negative_angle() -> None:
     """
     Test update_graph logic with negative (upward) angle.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Equivalence class: Negative angles
     """
     # Act
@@ -459,10 +517,15 @@ def test_update_graph_with_negative_angle() -> None:
     assert isinstance(info_text, str), "Should return info text"
 
 
+@pytest.mark.requirement("FR-010")
+@pytest.mark.requirement("REQ-VIS-003")
 def test_update_graph_with_angle_no_intersection() -> None:
     """
     Test update_graph logic when angle doesn't result in intersection.
 
+    Requirements:
+    - FR-010: Display intersection distance and coordinates
+    - REQ-VIS-003: Graph shall show "No intersection found" for non-intersecting angles
     Equivalence class: Angles without intersection
     Branch coverage: Tests no intersection branch (else path at line 189)
     """
@@ -475,10 +538,15 @@ def test_update_graph_with_angle_no_intersection() -> None:
     assert "No intersection" in info_text, "Should indicate no intersection"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_vertical_angle() -> None:
     """
     Test update_graph logic with vertical angle (90 degrees).
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Equivalence class: Vertical angle
     Branch coverage: Tests vertical ray handling in visualization (line 131-134)
     """
@@ -490,10 +558,12 @@ def test_update_graph_with_vertical_angle() -> None:
     assert isinstance(info_text, str), "Should return info text"
 
 
+@pytest.mark.requirement("FR-001")
 def test_update_graph_figure_has_required_traces() -> None:
     """
     Test that the returned figure has all required traces.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     Coverage: Tests figure creation and trace addition (lines 140-196)
     """
     # Act
@@ -510,10 +580,12 @@ def test_update_graph_figure_has_required_traces() -> None:
     )
 
 
+@pytest.mark.requirement("FR-001")
 def test_update_graph_figure_layout() -> None:
     """
     Test that the returned figure has proper layout configuration.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     Coverage: Tests layout configuration (lines 198-235)
     """
     # Act
@@ -526,10 +598,15 @@ def test_update_graph_figure_layout() -> None:
     assert hasattr(figure.layout, "yaxis"), "Layout should have yaxis configuration"
 
 
+@pytest.mark.requirement("FR-001")
+@pytest.mark.requirement("REQ-VIS-002")
 def test_update_graph_with_various_angles() -> None:
     """
     Test update_graph with multiple angle values to ensure robustness.
 
+    Requirements:
+    - FR-001: Display interactive road profile visualization
+    - REQ-VIS-002: Graph shall update when angle input changes
     Equivalence class: Various angles across the spectrum
     """
     test_angles = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 90.0, -15.0, -45.0, 180.0]
@@ -544,10 +621,12 @@ def test_update_graph_with_various_angles() -> None:
         assert len(figure.data) > 0, f"Figure should have traces for angle={angle}"
 
 
+@pytest.mark.requirement("FR-010")
 def test_update_graph_info_text_format() -> None:
     """
     Test that info_text has proper format and content.
 
+    Requirement: FR-010 - Display intersection distance and coordinates
     Coverage: Tests info_text generation for both intersection and no-intersection cases
     """
     # Test with angle likely to intersect

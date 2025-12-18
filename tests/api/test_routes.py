@@ -63,8 +63,12 @@ def sample_profile_data():
     }
 
 
+@pytest.mark.requirement("FR-007")
 class TestRootEndpoint:
-    """Tests for the root endpoint."""
+    """Tests for the root endpoint.
+
+    Requirement: FR-007 - Provide REST API for profile management
+    """
 
     def test_root_returns_api_info(self, client) -> None:
         """Test that root endpoint returns API information."""
@@ -76,8 +80,12 @@ class TestRootEndpoint:
         assert "profiles" in data
 
 
+@pytest.mark.requirement("FR-007")
 class TestHealthEndpoint:
-    """Tests for the health check endpoint."""
+    """Tests for the health check endpoint.
+
+    Requirement: FR-007 - Provide REST API for profile management
+    """
 
     def test_health_check_returns_healthy(self, client) -> None:
         """Test that health check returns healthy status."""
@@ -87,8 +95,15 @@ class TestHealthEndpoint:
         assert data["status"] == "healthy"
 
 
+@pytest.mark.requirement("FR-007")
+@pytest.mark.requirement("REQ-API-001")
 class TestListProfiles:
-    """Tests for GET /profiles endpoint."""
+    """Tests for GET /profiles endpoint.
+
+    Requirements:
+    - FR-007: Provide REST API for profile management
+    - REQ-API-001: GET /profiles shall return list of all profiles
+    """
 
     def test_list_profiles_empty(self, client) -> None:
         """Test listing profiles when database is empty."""
@@ -124,8 +139,15 @@ class TestListProfiles:
         assert len(data) == 3
 
 
+@pytest.mark.requirement("FR-007")
+@pytest.mark.requirement("REQ-API-002")
 class TestCreateProfile:
-    """Tests for POST /profiles endpoint."""
+    """Tests for POST /profiles endpoint.
+
+    Requirements:
+    - FR-007: Provide REST API for profile management
+    - REQ-API-002: POST /profiles shall create profile and return 201
+    """
 
     def test_create_profile_success(self, client, sample_profile_data) -> None:
         """Test creating a valid profile."""
@@ -145,8 +167,15 @@ class TestCreateProfile:
         assert isinstance(data["id"], int)
         assert data["id"] > 0
 
+    @pytest.mark.requirement("REQ-API-006")
+    @pytest.mark.requirement("NFR-006")
     def test_create_profile_duplicate_name_conflict(self, client, sample_profile_data) -> None:
-        """Test that duplicate name returns 409 Conflict."""
+        """Test that duplicate name returns 409 Conflict.
+
+        Requirements:
+        - REQ-API-006: Duplicate profile names shall return 409 Conflict
+        - NFR-006: Profile names shall be unique
+        """
         # Create first profile
         client.post("/profiles", json=sample_profile_data)
 
@@ -155,8 +184,12 @@ class TestCreateProfile:
         assert response.status_code == 409
         assert "already exists" in response.json()["detail"]
 
+    @pytest.mark.requirement("FR-008")
     def test_create_profile_invalid_coordinates_length(self, client) -> None:
-        """Test that mismatched coordinates return 422."""
+        """Test that mismatched coordinates return 422.
+
+        Requirement: FR-008 - Validate profile data before storage
+        """
         invalid_data = {
             "name": "invalid",
             "x_coordinates": [0.0, 1.0, 2.0],
@@ -165,8 +198,12 @@ class TestCreateProfile:
         response = client.post("/profiles", json=invalid_data)
         assert response.status_code == 422
 
+    @pytest.mark.requirement("FR-008")
     def test_create_profile_too_few_points(self, client) -> None:
-        """Test that fewer than 2 points returns 422."""
+        """Test that fewer than 2 points returns 422.
+
+        Requirement: FR-008 - Validate profile data before storage
+        """
         invalid_data = {
             "name": "invalid",
             "x_coordinates": [0.0],
@@ -175,8 +212,12 @@ class TestCreateProfile:
         response = client.post("/profiles", json=invalid_data)
         assert response.status_code == 422
 
+    @pytest.mark.requirement("FR-008")
     def test_create_profile_empty_name(self, client) -> None:
-        """Test that empty name returns 422."""
+        """Test that empty name returns 422.
+
+        Requirement: FR-008 - Validate profile data before storage
+        """
         invalid_data = {
             "name": "",
             "x_coordinates": [0.0, 1.0],
@@ -185,8 +226,12 @@ class TestCreateProfile:
         response = client.post("/profiles", json=invalid_data)
         assert response.status_code == 422
 
+    @pytest.mark.requirement("FR-008")
     def test_create_profile_whitespace_name(self, client) -> None:
-        """Test that whitespace-only name returns 422."""
+        """Test that whitespace-only name returns 422.
+
+        Requirement: FR-008 - Validate profile data before storage
+        """
         invalid_data = {
             "name": "   ",
             "x_coordinates": [0.0, 1.0],
@@ -195,8 +240,12 @@ class TestCreateProfile:
         response = client.post("/profiles", json=invalid_data)
         assert response.status_code == 422
 
+    @pytest.mark.requirement("FR-008")
     def test_create_profile_name_too_long(self, client) -> None:
-        """Test that name over 100 chars returns 422."""
+        """Test that name over 100 chars returns 422.
+
+        Requirement: FR-008 - Validate profile data before storage
+        """
         invalid_data = {
             "name": "a" * 101,
             "x_coordinates": [0.0, 1.0],
@@ -206,8 +255,15 @@ class TestCreateProfile:
         assert response.status_code == 422
 
 
+@pytest.mark.requirement("FR-007")
+@pytest.mark.requirement("REQ-API-003")
 class TestGetProfile:
-    """Tests for GET /profiles/{id} endpoint."""
+    """Tests for GET /profiles/{id} endpoint.
+
+    Requirements:
+    - FR-007: Provide REST API for profile management
+    - REQ-API-003: GET /profiles/{id} shall return profile or 404
+    """
 
     def test_get_profile_success(self, client, sample_profile_data) -> None:
         """Test getting an existing profile by ID."""
@@ -233,8 +289,15 @@ class TestGetProfile:
         assert response.status_code == 422
 
 
+@pytest.mark.requirement("FR-007")
+@pytest.mark.requirement("REQ-API-004")
 class TestUpdateProfile:
-    """Tests for PUT /profiles/{id} endpoint."""
+    """Tests for PUT /profiles/{id} endpoint.
+
+    Requirements:
+    - FR-007: Provide REST API for profile management
+    - REQ-API-004: PUT /profiles/{id} shall update profile or return 404/409
+    """
 
     def test_update_profile_success(self, client, sample_profile_data) -> None:
         """Test updating an existing profile."""
@@ -290,8 +353,15 @@ class TestUpdateProfile:
         assert response.status_code == 200
 
 
+@pytest.mark.requirement("FR-007")
+@pytest.mark.requirement("REQ-API-005")
 class TestDeleteProfile:
-    """Tests for DELETE /profiles/{id} endpoint."""
+    """Tests for DELETE /profiles/{id} endpoint.
+
+    Requirements:
+    - FR-007: Provide REST API for profile management
+    - REQ-API-005: DELETE /profiles/{id} shall delete profile and return 204
+    """
 
     def test_delete_profile_success(self, client, sample_profile_data) -> None:
         """Test deleting an existing profile."""
@@ -338,8 +408,12 @@ class TestDeleteProfile:
         assert len(list_response.json()) == 2
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetDbDependency:
-    """Tests for the get_db dependency function."""
+    """Tests for the get_db dependency function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_db_yields_session(self, test_engine) -> None:
         """Test that get_db yields a database session."""
@@ -370,8 +444,15 @@ class TestGetDbDependency:
                 pass
 
 
+@pytest.mark.requirement("REQ-API-007")
+@pytest.mark.requirement("NFR-006")
 class TestIntegrityErrorHandling:
-    """Tests for IntegrityError handling in routes (race condition paths)."""
+    """Tests for IntegrityError handling in routes (race condition paths).
+
+    Requirements:
+    - REQ-API-007: IntegrityError race conditions shall return 409
+    - NFR-006: Profile names shall be unique
+    """
 
     def test_create_profile_integrity_error_race_condition(self, client, test_engine) -> None:
         """Test that IntegrityError during create returns 409."""

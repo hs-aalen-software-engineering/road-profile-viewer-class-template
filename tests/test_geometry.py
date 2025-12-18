@@ -12,6 +12,7 @@ Equivalence classes and boundary values are documented in each test.
 """
 
 import numpy as np
+import pytest
 from numpy.typing import NDArray
 from pytest import approx
 
@@ -22,10 +23,12 @@ from road_profile_viewer.geometry import calculate_ray_line, find_intersection
 # ==============================================================================
 
 
+@pytest.mark.requirement("REQ-GEOM-001")
 def test_calculate_ray_line_vertical_ray() -> None:
     """
     Test that calculate_ray_line() handles vertical ray (angle = 90°).
 
+    Requirement: REQ-GEOM-001 - calculate_ray_line() shall handle vertical rays
     Equivalence class: Vertical rays (angle ≈ 90°)
     Boundary value: angle = 90° (exact vertical)
     Branch coverage: Tests vertical ray branch (np.abs(np.cos(angle_rad)) < 1e-10)
@@ -45,10 +48,12 @@ def test_calculate_ray_line_vertical_ray() -> None:
     assert y_ray[1] < camera_y, "Ray should extend downward"
 
 
+@pytest.mark.requirement("REQ-GEOM-001")
 def test_calculate_ray_line_near_vertical_ray() -> None:
     """
     Test that calculate_ray_line() handles near-vertical ray (angle ≈ 90°).
 
+    Requirement: REQ-GEOM-001 - calculate_ray_line() shall handle vertical rays
     Equivalence class: Near-vertical rays (89° < angle < 91°)
     Boundary value: angle = 89.9° (just below vertical threshold)
     Branch coverage: Tests the slope calculation branch (not vertical)
@@ -72,10 +77,12 @@ def test_calculate_ray_line_near_vertical_ray() -> None:
     assert y_change > 10 * x_change, "Near-vertical ray should have very steep slope"
 
 
+@pytest.mark.requirement("REQ-GEOM-002")
 def test_calculate_ray_line_upward_ray_negative_angle() -> None:
     """
     Test that calculate_ray_line() handles upward ray (negative angle).
 
+    Requirement: REQ-GEOM-002 - calculate_ray_line() shall limit upward rays to 20 units
     Equivalence class: Upward rays (angle < 0°)
     Branch coverage: Tests upward ray branch (angle < 0 or angle > 180)
     """
@@ -98,10 +105,12 @@ def test_calculate_ray_line_upward_ray_negative_angle() -> None:
     assert y_ray[-1] > y_ray[0], "Upward ray should have increasing y values"
 
 
+@pytest.mark.requirement("REQ-GEOM-002")
 def test_calculate_ray_line_upward_ray_large_angle() -> None:
     """
     Test that calculate_ray_line() handles upward ray (angle > 180°).
 
+    Requirement: REQ-GEOM-002 - calculate_ray_line() shall limit upward rays to 20 units
     Equivalence class: Upward rays (angle > 180°)
     Boundary value: angle = 200° (> 180°)
     Branch coverage: Tests upward ray branch (angle < 0 or angle > 180)
@@ -123,10 +132,12 @@ def test_calculate_ray_line_upward_ray_large_angle() -> None:
     assert np.max(x_ray) <= camera_x + 20, "Upward ray should be limited to 20 units"
 
 
+@pytest.mark.requirement("REQ-GEOM-003")
 def test_calculate_ray_line_downward_ray() -> None:
     """
     Test that calculate_ray_line() handles downward ray (positive angle 0-180°).
 
+    Requirement: REQ-GEOM-003 - calculate_ray_line() shall extend downward rays to x_max
     Equivalence class: Downward rays (0° < angle ≤ 180°)
     Branch coverage: Tests downward ray branch (else path for angle direction)
     """
@@ -149,10 +160,12 @@ def test_calculate_ray_line_downward_ray() -> None:
     assert y_ray[-1] < y_ray[0], "Downward ray should have decreasing y values"
 
 
+@pytest.mark.requirement("FR-002")
 def test_calculate_ray_line_horizontal_ray() -> None:
     """
     Test that calculate_ray_line() handles horizontal ray (angle = 0°).
 
+    Requirement: FR-002 - The system shall calculate camera ray-road intersection
     Equivalence class: Horizontal rays (angle = 0°)
     Boundary value: angle = 0° (horizontal)
     """
@@ -174,10 +187,12 @@ def test_calculate_ray_line_horizontal_ray() -> None:
     assert np.max(x_ray) == approx(x_max), "Horizontal ray should extend to x_max"
 
 
+@pytest.mark.requirement("FR-002")
 def test_calculate_ray_line_boundary_angle_180() -> None:
     """
     Test that calculate_ray_line() handles angle = 180° (boundary value).
 
+    Requirement: FR-002 - The system shall calculate camera ray-road intersection
     Equivalence class: Downward rays (0° ≤ angle ≤ 180°)
     Boundary value: angle = 180° (horizontal pointing left, treated as downward path)
     """
@@ -199,10 +214,12 @@ def test_calculate_ray_line_boundary_angle_180() -> None:
     assert np.max(x_ray) == approx(x_max), "Ray at 180° follows downward path to x_max"
 
 
+@pytest.mark.requirement("FR-002")
 def test_calculate_ray_line_steep_downward_angle() -> None:
     """
     Test that calculate_ray_line() handles steep downward angle.
 
+    Requirement: FR-002 - The system shall calculate camera ray-road intersection
     Equivalence class: Steep downward rays (60° < angle < 90°)
     """
     # Arrange
@@ -223,10 +240,12 @@ def test_calculate_ray_line_steep_downward_angle() -> None:
     assert y_change > x_change, "Steep ray should have larger y change than x change"
 
 
+@pytest.mark.requirement("FR-002")
 def test_calculate_ray_line_custom_camera_position() -> None:
     """
     Test that calculate_ray_line() works with custom camera position.
 
+    Requirement: FR-002 - The system shall calculate camera ray-road intersection
     Equivalence class: Various camera positions (non-default)
     """
     # Arrange
@@ -250,11 +269,16 @@ def test_calculate_ray_line_custom_camera_position() -> None:
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-002")
+@pytest.mark.requirement("REQ-GEOM-007")
 def test_find_intersection_finds_intersection_for_normal_angle() -> None:
     """
     Test that find_intersection() returns a valid intersection
     for a normal downward angle with a simple road profile.
 
+    Requirements:
+    - FR-002: The system shall calculate camera ray-road intersection
+    - REQ-GEOM-007: Intersection distance shall be positive when found
     Equivalence class: Normal downward angles (-90° < angle < 0°)
     """
     # Arrange: Create simple road going upward
@@ -275,10 +299,12 @@ def test_find_intersection_finds_intersection_for_normal_angle() -> None:
     assert 0 <= x <= 30, "intersection x should be within road bounds"
 
 
+@pytest.mark.requirement("REQ-GEOM-005")
 def test_find_intersection_skips_segments_behind_camera() -> None:
     """
     Test that find_intersection() skips road segments behind the camera.
 
+    Requirement: REQ-GEOM-005 - find_intersection() shall skip road segments behind camera
     This tests line 110 (continue) when x2 <= camera_x.
     """
     # Arrange: Create road with segments before and after camera
@@ -296,10 +322,12 @@ def test_find_intersection_skips_segments_behind_camera() -> None:
     assert x > camera_x, "Intersection should be ahead of camera (x > camera_x)"
 
 
+@pytest.mark.requirement("REQ-GEOM-006")
 def test_find_intersection_parallel_ray_and_segment() -> None:
     """
     Test find_intersection when ray is nearly parallel to a road segment.
 
+    Requirement: REQ-GEOM-006 - find_intersection() shall handle parallel ray and segment
     This tests line 125 (t = 0) when |diff2 - diff1| < 1e-10 (parallel case).
     """
     # Arrange: Create horizontal road and nearly horizontal ray

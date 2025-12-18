@@ -15,8 +15,12 @@ from pydantic import ValidationError
 from road_profile_viewer.models import RoadProfile, RoadProfileResponse
 
 
+@pytest.mark.requirement("FR-008")
 class TestRoadProfileValidation:
-    """Tests for RoadProfile Pydantic model validation."""
+    """Tests for RoadProfile Pydantic model validation.
+
+    Requirement: FR-008 - Validate profile data before storage
+    """
 
     def test_valid_profile(self) -> None:
         """Test that valid profile data passes validation."""
@@ -48,8 +52,12 @@ class TestRoadProfileValidation:
         )
         assert len(profile.name) == 100
 
+    @pytest.mark.requirement("REQ-VAL-001")
     def test_invalid_empty_name(self) -> None:
-        """Test that empty name fails validation."""
+        """Test that empty name fails validation.
+
+        Requirement: REQ-VAL-001 - Profile name shall be 1-100 characters
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="",
@@ -58,8 +66,12 @@ class TestRoadProfileValidation:
             )
         assert "too_short" in str(exc_info.value) or "at least 1" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-003")
     def test_invalid_whitespace_name(self) -> None:
-        """Test that whitespace-only name fails validation."""
+        """Test that whitespace-only name fails validation.
+
+        Requirement: REQ-VAL-003 - Whitespace-only names shall be rejected
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="   ",
@@ -68,8 +80,12 @@ class TestRoadProfileValidation:
             )
         assert "empty or only whitespace" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-001")
     def test_invalid_name_too_long(self) -> None:
-        """Test that name over 100 chars fails validation."""
+        """Test that name over 100 chars fails validation.
+
+        Requirement: REQ-VAL-001 - Profile name shall be 1-100 characters
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="a" * 101,
@@ -78,8 +94,12 @@ class TestRoadProfileValidation:
             )
         assert "too_long" in str(exc_info.value) or "at most 100" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-004")
     def test_invalid_single_point(self) -> None:
-        """Test that single point fails validation."""
+        """Test that single point fails validation.
+
+        Requirement: REQ-VAL-004 - Coordinates shall have minimum 2 points
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="single_point",
@@ -88,8 +108,12 @@ class TestRoadProfileValidation:
             )
         assert "too_short" in str(exc_info.value) or "at least 2" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-004")
     def test_invalid_empty_coordinates(self) -> None:
-        """Test that empty coordinates fail validation."""
+        """Test that empty coordinates fail validation.
+
+        Requirement: REQ-VAL-004 - Coordinates shall have minimum 2 points
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="empty_coords",
@@ -98,8 +122,12 @@ class TestRoadProfileValidation:
             )
         assert "too_short" in str(exc_info.value) or "at least 2" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-005")
     def test_invalid_mismatched_lengths(self) -> None:
-        """Test that mismatched coordinate lengths fail validation."""
+        """Test that mismatched coordinate lengths fail validation.
+
+        Requirement: REQ-VAL-005 - x and y coordinate arrays shall have equal length
+        """
         with pytest.raises(ValidationError) as exc_info:
             RoadProfile(
                 name="mismatched",
@@ -108,8 +136,12 @@ class TestRoadProfileValidation:
             )
         assert "same length" in str(exc_info.value)
 
+    @pytest.mark.requirement("REQ-VAL-002")
     def test_name_gets_stripped(self) -> None:
-        """Test that name with leading/trailing whitespace gets stripped."""
+        """Test that name with leading/trailing whitespace gets stripped.
+
+        Requirement: REQ-VAL-002 - Profile name shall be stripped of whitespace
+        """
         profile = RoadProfile(
             name="  trimmed  ",
             x_coordinates=[0.0, 1.0],
@@ -149,8 +181,12 @@ class TestRoadProfileValidation:
         assert len(profile.x_coordinates) == 100
 
 
+@pytest.mark.requirement("FR-008")
 class TestRoadProfileResponse:
-    """Tests for RoadProfileResponse Pydantic model."""
+    """Tests for RoadProfileResponse Pydantic model.
+
+    Requirement: FR-008 - Validate profile data before storage
+    """
 
     def test_valid_response(self) -> None:
         """Test that valid response data passes validation."""
@@ -193,8 +229,12 @@ class TestRoadProfileResponse:
             )
 
 
+@pytest.mark.requirement("FR-008")
 class TestModelConfig:
-    """Tests for Pydantic model configuration."""
+    """Tests for Pydantic model configuration.
+
+    Requirement: FR-008 - Validate profile data before storage
+    """
 
     def test_road_profile_has_examples(self) -> None:
         """Test that RoadProfile has JSON schema examples."""

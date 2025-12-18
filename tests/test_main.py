@@ -12,11 +12,15 @@ Equivalence classes and boundary values are documented in each test.
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 
+
+@pytest.mark.requirement("FR-001")
 def test_main_creates_and_runs_app() -> None:
     """
     Test that main() creates both FastAPI and Dash apps and runs them.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     Coverage: Tests main() function which starts FastAPI in background thread
     and runs Dash on main thread.
     """
@@ -47,10 +51,12 @@ def test_main_creates_and_runs_app() -> None:
                 mock_dash_app.run.assert_called_once_with(debug=True, port=8050, use_reloader=False)
 
 
+@pytest.mark.requirement("FR-007")
 def test_run_fastapi() -> None:
     """
     Test that run_fastapi() runs uvicorn with correct configuration.
 
+    Requirement: FR-007 - Provide REST API for profile management
     Coverage: Tests run_fastapi() function.
     """
     with patch("road_profile_viewer.main.uvicorn.run") as mock_uvicorn:
@@ -65,10 +71,12 @@ def test_run_fastapi() -> None:
         assert call_kwargs[1]["log_level"] == "warning"
 
 
+@pytest.mark.requirement("FR-001")
 def test_main_function_is_callable() -> None:
     """
     Test that the main function is callable and can be imported.
 
+    Requirement: FR-001 - Display interactive road profile visualization
     This verifies the module structure is correct.
     """
     # Act & Assert

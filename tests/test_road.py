@@ -10,6 +10,7 @@ Equivalence classes and boundary values are documented in each test.
 """
 
 import numpy as np
+import pytest
 from pytest import approx
 
 from road_profile_viewer.road import generate_road_profile
@@ -19,10 +20,17 @@ from road_profile_viewer.road import generate_road_profile
 # ==============================================================================
 
 
+@pytest.mark.requirement("FR-003")
+@pytest.mark.requirement("REQ-ROAD-001")
+@pytest.mark.requirement("REQ-ROAD-002")
 def test_generate_road_profile_default_parameters() -> None:
     """
     Test generate_road_profile() with default parameters.
 
+    Requirements:
+    - FR-003: Generate clothoid-approximated road profiles
+    - REQ-ROAD-001: Return arrays of exactly num_points length
+    - REQ-ROAD-002: Road profile shall start at (x=0, y=0)
     Equivalence class: Default parameters (num_points=100, x_max=80)
     """
     # Act
@@ -38,10 +46,12 @@ def test_generate_road_profile_default_parameters() -> None:
     assert y[0] == approx(0.0), "Road should start at y=0 (normalized)"
 
 
+@pytest.mark.requirement("REQ-ROAD-001")
 def test_generate_road_profile_small_num_points() -> None:
     """
     Test generate_road_profile() with small number of points.
 
+    Requirement: REQ-ROAD-001 - Return arrays of exactly num_points length
     Equivalence class: Small num_points (< 50)
     Boundary value: num_points = 10
     """
@@ -60,10 +70,12 @@ def test_generate_road_profile_small_num_points() -> None:
     assert y[0] == approx(0.0), "Road should start at y=0"
 
 
+@pytest.mark.requirement("REQ-ROAD-001")
 def test_generate_road_profile_medium_num_points() -> None:
     """
     Test generate_road_profile() with medium number of points.
 
+    Requirement: REQ-ROAD-001 - Return arrays of exactly num_points length
     Equivalence class: Medium num_points (50-200)
     """
     # Arrange
@@ -80,10 +92,12 @@ def test_generate_road_profile_medium_num_points() -> None:
     assert x[-1] == approx(x_max), f"Road should end at x_max={x_max}"
 
 
+@pytest.mark.requirement("REQ-ROAD-001")
 def test_generate_road_profile_large_num_points() -> None:
     """
     Test generate_road_profile() with large number of points.
 
+    Requirement: REQ-ROAD-001 - Return arrays of exactly num_points length
     Equivalence class: Large num_points (> 200)
     """
     # Arrange
@@ -98,10 +112,12 @@ def test_generate_road_profile_large_num_points() -> None:
     assert len(y) == num_points, f"y should have {num_points} points"
 
 
+@pytest.mark.requirement("REQ-ROAD-004")
 def test_generate_road_profile_small_x_max() -> None:
     """
     Test generate_road_profile() with small x_max value.
 
+    Requirement: REQ-ROAD-004 - Road profile shall end at x=x_max
     Equivalence class: Small x_max (< 50)
     Boundary value: x_max = 10
     """
@@ -119,10 +135,12 @@ def test_generate_road_profile_small_x_max() -> None:
     assert np.all(x <= x_max), f"All x values should be <= {x_max}"
 
 
+@pytest.mark.requirement("REQ-ROAD-004")
 def test_generate_road_profile_large_x_max() -> None:
     """
     Test generate_road_profile() with large x_max value.
 
+    Requirement: REQ-ROAD-004 - Road profile shall end at x=x_max
     Equivalence class: Large x_max (> 100)
     """
     # Arrange
@@ -139,10 +157,12 @@ def test_generate_road_profile_large_x_max() -> None:
     assert np.all(x <= x_max), f"All x values should be <= {x_max}"
 
 
+@pytest.mark.requirement("REQ-ROAD-003")
 def test_generate_road_profile_x_coordinates_monotonic() -> None:
     """
     Test that x coordinates are monotonically increasing.
 
+    Requirement: REQ-ROAD-003 - Road x-coordinates shall be monotonically increasing
     Mathematical property: x values should strictly increase
     """
     # Act
@@ -153,10 +173,17 @@ def test_generate_road_profile_x_coordinates_monotonic() -> None:
     assert np.all(x_diffs > 0), "x coordinates should be strictly increasing"
 
 
+@pytest.mark.requirement("REQ-ROAD-001")
+@pytest.mark.requirement("REQ-ROAD-002")
+@pytest.mark.requirement("REQ-ROAD-004")
 def test_generate_road_profile_output_shape_consistency() -> None:
     """
     Test that output shapes are consistent with input parameters.
 
+    Requirements:
+    - REQ-ROAD-001: Return arrays of exactly num_points length
+    - REQ-ROAD-002: Road profile shall start at (x=0, y=0)
+    - REQ-ROAD-004: Road profile shall end at x=x_max
     Boundary value test: Various combinations of parameters
     """
     # Test multiple combinations
@@ -178,10 +205,12 @@ def test_generate_road_profile_output_shape_consistency() -> None:
         assert y[0] == approx(0.0, abs=1e-10), "Road should start at y=0"
 
 
+@pytest.mark.requirement("REQ-ROAD-001")
 def test_generate_road_profile_minimum_viable_points() -> None:
     """
     Test generate_road_profile() with minimum number of points.
 
+    Requirement: REQ-ROAD-001 - Return arrays of exactly num_points length
     Boundary value: num_points = 2 (minimum for a line segment)
     """
     # Arrange
@@ -199,10 +228,12 @@ def test_generate_road_profile_minimum_viable_points() -> None:
     assert y[0] == 0.0, "Should start at y=0"
 
 
+@pytest.mark.requirement("FR-003")
 def test_generate_road_profile_y_values_reasonable() -> None:
     """
     Test that y values are within reasonable bounds.
 
+    Requirement: FR-003 - Generate clothoid-approximated road profiles
     Mathematical property: y values should be within expected range
     based on the clothoid approximation formula
     """

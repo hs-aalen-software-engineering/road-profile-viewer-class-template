@@ -51,9 +51,14 @@ def sample_coordinates():
     }
 
 
+@pytest.mark.requirement("FR-006")
 class TestCreateProfile:
-    """Tests for the create_profile() function."""
+    """Tests for the create_profile() function.
 
+    Requirement: FR-006 - Persist profiles in database
+    """
+
+    @pytest.mark.requirement("REQ-DB-001")
     def test_create_profile_returns_profile_with_id(self, db_session, sample_coordinates) -> None:
         """
         Test that create_profile() returns a profile with an assigned ID.
@@ -105,10 +110,15 @@ class TestCreateProfile:
         assert retrieved is not None
         assert retrieved.name == "persisted"
 
+    @pytest.mark.requirement("REQ-DB-002")
+    @pytest.mark.requirement("NFR-006")
     def test_create_profile_duplicate_name_raises_error(self, db_session, sample_coordinates) -> None:
         """
         Test that creating a profile with a duplicate name raises IntegrityError.
 
+        Requirements:
+        - REQ-DB-002: create_profile() shall raise IntegrityError for duplicate names
+        - NFR-006: Profile names shall be unique
         Equivalence class: Unique constraint violation
         """
         create_profile(
@@ -142,8 +152,12 @@ class TestCreateProfile:
         assert profile3.name == "profile3"
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetProfile:
-    """Tests for the get_profile() function."""
+    """Tests for the get_profile() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_profile_returns_existing_profile(self, db_session, sample_coordinates) -> None:
         """
@@ -164,10 +178,12 @@ class TestGetProfile:
         assert retrieved.id == created.id
         assert retrieved.name == "retrievable"
 
+    @pytest.mark.requirement("REQ-DB-003")
     def test_get_profile_returns_none_for_nonexistent_id(self, db_session) -> None:
         """
         Test that get_profile() returns None for a nonexistent ID.
 
+        Requirement: REQ-DB-003 - get_profile() shall return None for non-existent IDs
         Equivalence class: Profile not found
         """
         result = get_profile(db_session, 9999)
@@ -195,8 +211,12 @@ class TestGetProfile:
         assert result is None
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetProfileByName:
-    """Tests for the get_profile_by_name() function."""
+    """Tests for the get_profile_by_name() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_profile_by_name_returns_existing_profile(self, db_session, sample_coordinates) -> None:
         """
@@ -226,10 +246,12 @@ class TestGetProfileByName:
 
         assert result is None
 
+    @pytest.mark.requirement("REQ-DB-004")
     def test_get_profile_by_name_is_case_sensitive(self, db_session, sample_coordinates) -> None:
         """
         Test that get_profile_by_name() is case-sensitive.
 
+        Requirement: REQ-DB-004 - get_profile_by_name() shall be case-sensitive
         Equivalence class: Case sensitivity
         """
         create_profile(
@@ -247,8 +269,12 @@ class TestGetProfileByName:
         assert get_profile_by_name(db_session, "CASESENSITIVE") is None
 
 
+@pytest.mark.requirement("FR-006")
 class TestGetAllProfiles:
-    """Tests for the get_all_profiles() function."""
+    """Tests for the get_all_profiles() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_get_all_profiles_returns_empty_list_initially(self, db_session) -> None:
         """
@@ -295,8 +321,12 @@ class TestGetAllProfiles:
         assert result[0].name == "only_one"
 
 
+@pytest.mark.requirement("FR-006")
 class TestUpdateProfile:
-    """Tests for the update_profile() function."""
+    """Tests for the update_profile() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_update_profile_changes_name(self, db_session, sample_coordinates) -> None:
         """
@@ -383,8 +413,12 @@ class TestUpdateProfile:
             update_profile(db_session, profile1.id, name="profile2")
 
 
+@pytest.mark.requirement("FR-006")
 class TestDeleteProfile:
-    """Tests for the delete_profile() function."""
+    """Tests for the delete_profile() function.
+
+    Requirement: FR-006 - Persist profiles in database
+    """
 
     def test_delete_profile_removes_profile(self, db_session, sample_coordinates) -> None:
         """
@@ -405,10 +439,12 @@ class TestDeleteProfile:
         assert result is True
         assert get_profile(db_session, profile_id) is None
 
+    @pytest.mark.requirement("REQ-DB-005")
     def test_delete_profile_returns_false_for_nonexistent(self, db_session) -> None:
         """
         Test that delete_profile() returns False for nonexistent profile.
 
+        Requirement: REQ-DB-005 - delete_profile() shall return False for non-existent profiles
         Equivalence class: Profile not found
         """
         result = delete_profile(db_session, 9999)
